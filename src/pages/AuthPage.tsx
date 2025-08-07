@@ -51,7 +51,8 @@ const AuthPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-center text-2xl font-bold">
+          <img src="/logotipo-azul.png" alt="Logo Principado de Asturias" className="mx-auto mb-4 h-20" />
+          <CardTitle className="text-center text-xl font-normal">
             Registro CONGELADORES
             <br />
             <span className="text-xl font-normal text-gray-600">Agentes Medioambientales Asturias</span>
@@ -66,7 +67,7 @@ const AuthPage = () => {
                 type="email" // Supabase requiere formato de email para autenticación
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Introduce tu usuario" // Changed placeholder
+                placeholder="Introduce tu usuario"
                 required
               />
             </div>
