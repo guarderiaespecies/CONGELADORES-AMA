@@ -47,7 +47,7 @@ const Index = () => {
     return data?.name || null;
   }, []);
 
-  const checkUserAndRole = useCallback(async (event?: string) => { // Añadimos el parámetro 'event'
+  const checkUserAndRole = useCallback(async () => {
     setLoading(true);
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
@@ -66,54 +66,28 @@ const Index = () => {
     }
 
     setUser(session.user);
-    const { role, freezerId, defaultFreezerId } = await fetchUserProfile(session.user.id);
+    // Aquí, el current_freezer_id ya debería estar restablecido si fue un inicio de sesión
+    const { role, freezerId } = await fetchUserProfile(session.user.id);
     setUserRole(role);
+    setCurrentFreezerId(freezerId);
 
-    let effectiveFreezerId = freezerId; // El congelador actual del perfil es el punto de partida
-
-    // Lógica para restablecer al congelador por defecto solo en el inicio de sesión
-    if (role === 'User' && defaultFreezerId) {
-      // Si es un inicio de sesión (evento 'SIGNED_IN') O si el usuario no tiene un congelador actual asignado
-      if (event === 'SIGNED_IN' || !freezerId) {
-        if (freezerId !== defaultFreezerId) { // Solo actualiza si es diferente para evitar escrituras innecesarias
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update({ current_freezer_id: defaultFreezerId })
-            .eq('id', session.user.id);
-
-          if (updateError) {
-            console.error("Error al asignar default_freezer_id:", updateError);
-            toast({ title: "Error", description: "No se pudo asignar el congelador por defecto.", variant: "destructive" });
-          } else {
-            effectiveFreezerId = defaultFreezerId; // Usa el congelador por defecto
-            toast({ title: "Congelador asignado", description: "Se ha asignado tu congelador por defecto.", duration: 3000 });
-          }
-        }
-      }
-    }
-    // Si no es un 'User', no tiene default, o si el usuario ya cambió su congelador en esta sesión,
-    // effectiveFreezerId mantendrá el valor que se obtuvo de la base de datos (freezerId),
-    // a menos que se haya restablecido al default en el bloque anterior.
-
-    setCurrentFreezerId(effectiveFreezerId);
-
-    const name = await fetchFreezerName(effectiveFreezerId);
+    const name = await fetchFreezerName(freezerId);
     setCurrentFreezerName(name);
 
     setLoading(false);
   }, [navigate, toast, fetchUserProfile, fetchFreezerName]);
 
   useEffect(() => {
-    // Llamada inicial al montar el componente
-    checkUserAndRole();
+    checkUserAndRole(); // Llamada inicial para cargar los datos
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) {
         navigate('/');
       } else {
         setUser(session.user);
-        // Pasamos el tipo de evento a checkUserAndRole
-        checkUserAndRole(event);
+        // Re-verificar usuario y rol en caso de cambios de estado de autenticación
+        // (ej. si un admin cambia el rol o el congelador por defecto)
+        checkUserAndRole();
       }
     });
 

@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label"; {/* Corrected import statement */}
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -14,17 +14,54 @@ const AuthPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Nueva función para manejar el restablecimiento del congelador por defecto
+  const handlePostLoginReset = useCallback(async (userId: string) => {
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('role, current_freezer_id, default_freezer_id')
+      .eq('id', userId)
+      .single();
+
+    if (profileError && profileError.code !== 'PGRST116') {
+      console.error("Error al obtener el perfil del usuario para reset:", profileError);
+      toast({ title: "Error de perfil", description: "No se pudo verificar el perfil para el congelador por defecto.", variant: "destructive" });
+      return;
+    }
+
+    if (profileData && profileData.role === 'User' && profileData.default_freezer_id) {
+      // Solo restablecer si el current_freezer_id es diferente al default_freezer_id
+      if (profileData.current_freezer_id !== profileData.default_freezer_id) {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ current_freezer_id: profileData.default_freezer_id })
+          .eq('id', userId);
+
+        if (updateError) {
+          console.error("Error al restablecer default_freezer_id:", updateError);
+          toast({ title: "Error", description: "No se pudo restablecer el congelador por defecto.", variant: "destructive" });
+        } else {
+          toast({ title: "Congelador asignado", description: "Se ha restablecido tu congelador por defecto.", duration: 3000 });
+        }
+      }
+    }
+  }, [toast]);
+
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate('/app'); // Redirect to main app if already logged in
+        // Si ya está logueado, asegúrate de que el current_freezer_id sea el por defecto antes de navegar
+        await handlePostLoginReset(session.user.id);
+        navigate('/app');
       }
     };
     checkUser();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session) {
+        if (event === 'SIGNED_IN') { // Solo restablecer en el evento de inicio de sesión real
+          await handlePostLoginReset(session.user.id);
+        }
         navigate('/app');
       }
     });
@@ -32,17 +69,17 @@ const AuthPage = () => {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, handlePostLoginReset]); // Añadir handlePostLoginReset a las dependencias
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       toast({ title: "Error de inicio de sesión", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Inicio de sesión exitoso", description: "Bienvenido de nuevo." });
-      // Redirection handled by onAuthStateChange listener
+      // La redirección y el restablecimiento del congelador son manejados por el listener onAuthStateChange
     }
     setLoading(false);
   };
@@ -64,7 +101,7 @@ const AuthPage = () => {
               <Label htmlFor="login-username">Usuario</Label>
               <Input
                 id="login-username"
-                type="email" // Supabase requiere formato de email para autenticación
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Introduce tu usuario"
