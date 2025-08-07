@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,26 @@ const AuthPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate('/app'); // Redirect to main app if already logged in
+      }
+    };
+    checkUser();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        navigate('/app');
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [navigate]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -23,7 +43,7 @@ const AuthPage = () => {
       toast({ title: "Error de inicio de sesión", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Inicio de sesión exitoso", description: "Bienvenido de nuevo." });
-      navigate('/'); // Redirige a la página principal tras el login
+      // Redirection handled by onAuthStateChange listener
     }
     setLoading(false);
   };
