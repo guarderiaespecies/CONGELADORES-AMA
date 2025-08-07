@@ -7,7 +7,8 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
 import ChangeFreezerPage from "./pages/ChangeFreezerPage";
-import AddItemPage from "./pages/AddItemPage"; // Import the new page
+import AddItemPage from "./pages/AddItemPage";
+import RemoveItemPage from "./pages/RemoveItemPage"; // Import the new page
 
 const queryClient = new QueryClient();
 
@@ -18,10 +19,11 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<AuthPage />} /> {/* AuthPage is now the default route */}
-          <Route path="/app" element={<Index />} /> {/* Main app content moved to /app */}
-          <Route path="/change-freezer" element={<ChangeFreezerPage />} /> {/* New route for changing freezer */}
-          <Route path="/add-item" element={<AddItemPage />} /> {/* New route for adding items */}
+          <Route path="/" element={<AuthPage />} />
+          <Route path="/app" element={<Index />} />
+          <Route path="/change-freezer" element={<ChangeFreezerPage />} />
+          <Route path="/add-item" element={<AddItemPage />} />
+          <Route path="/remove-item" element={<RemoveItemPage />} /> {/* New route for removing items */}
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

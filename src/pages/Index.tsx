@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { supabase } from '@/lib/supabase';
 import { useToast } from "@/components/ui/use-toast";
-import AppHeader from "@/components/AppHeader"; // Import the new AppHeader component
+import AppHeader from "@/components/AppHeader";
 
 const Index = () => {
   const [loading, setLoading] = useState(true);
@@ -67,7 +67,7 @@ const Index = () => {
     setUserRole(role);
     setCurrentFreezerId(freezerId);
 
-    const name = await fetchFreezerName(freezerId);
+    const name = await fetchFreezerName(freeizerId);
     setCurrentFreezerName(name);
 
     setLoading(false);
@@ -121,7 +121,12 @@ const Index = () => {
         >
           AÑADIR
         </Button>
-        <Button className="bg-red-600 hover:bg-red-700 text-white text-lg py-6 h-auto">RETIRAR</Button>
+        <Button
+          className="bg-red-600 hover:bg-red-700 text-white text-lg py-6 h-auto"
+          onClick={() => navigate('/remove-item')} // Navegar a la nueva página
+        >
+          RETIRAR
+        </Button>
       </div>
 
       <MadeWithDyad />
