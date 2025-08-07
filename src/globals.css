@@ -50,7 +50,7 @@
 
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    --green-underline: var(--primary); /* Cambiado a azul, usando la variable --primary */
+    --underline-green: 120 60% 70%; /* Tono de verde claro para el subrayado */
   }
 
   .dark {

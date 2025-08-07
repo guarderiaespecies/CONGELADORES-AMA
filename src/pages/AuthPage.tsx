@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Label } => "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -55,7 +55,7 @@ const AuthPage = () => {
           <CardTitle className="text-center text-xl font-normal">
             Registro <span className="font-bold">CONGELADORES</span>
             <br />
-            <span className="text-xl font-normal text-gray-600 border-b-2 border-primary">Agentes Medioambientales Asturias</span>
+            <span className="text-xl font-normal text-gray-600 border-b-2 border-[var(--underline-green)]">Agentes Medioambientales Asturias</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
