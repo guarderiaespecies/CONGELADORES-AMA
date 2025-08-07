@@ -14,8 +14,8 @@ const AuthPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Nueva función para manejar el restablecimiento del congelador por defecto
   const handlePostLoginReset = useCallback(async (userId: string) => {
+    console.log("handlePostLoginReset: Iniciando para userId:", userId);
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('role, current_freezer_id, default_freezer_id')
@@ -23,65 +23,88 @@ const AuthPage = () => {
       .single();
 
     if (profileError && profileError.code !== 'PGRST116') {
-      console.error("Error al obtener el perfil del usuario para reset:", profileError);
+      console.error("handlePostLoginReset: Error al obtener el perfil del usuario para reset:", profileError);
       toast({ title: "Error de perfil", description: "No se pudo verificar el perfil para el congelador por defecto.", variant: "destructive" });
       return;
     }
 
     if (profileData && profileData.role === 'User' && profileData.default_freezer_id) {
-      // Solo restablecer si el current_freezer_id es diferente al default_freezer_id
+      console.log("handlePostLoginReset: Usuario es 'User' con default_freezer_id. Actual:", profileData.current_freezer_id, "Por defecto:", profileData.default_freezer_id);
       if (profileData.current_freezer_id !== profileData.default_freezer_id) {
+        console.log("handlePostLoginReset: Actualizando current_freezer_id al por defecto.");
         const { error: updateError } = await supabase
           .from('profiles')
           .update({ current_freezer_id: profileData.default_freezer_id })
           .eq('id', userId);
 
         if (updateError) {
-          console.error("Error al restablecer default_freezer_id:", updateError);
+          console.error("handlePostLoginReset: Error al restablecer default_freezer_id:", updateError);
           toast({ title: "Error", description: "No se pudo restablecer el congelador por defecto.", variant: "destructive" });
         } else {
+          console.log("handlePostLoginReset: Congelador por defecto restablecido con éxito.");
           toast({ title: "Congelador asignado", description: "Se ha restablecido tu congelador por defecto.", duration: 3000 });
         }
+      } else {
+        console.log("handlePostLoginReset: current_freezer_id ya coincide con default_freezer_id. No se necesita actualización.");
       }
+    } else {
+      console.log("handlePostLoginReset: Usuario no es 'User' o no tiene default_freezer_id. No se necesita restablecimiento.");
     }
+    console.log("handlePostLoginReset: Finalizado.");
   }, [toast]);
 
   useEffect(() => {
     const checkUser = async () => {
+      console.log("AuthPage useEffect: Iniciando checkUser.");
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Si ya está logueado, asegúrate de que el current_freezer_id sea el por defecto antes de navegar
+        console.log("AuthPage useEffect: Sesión encontrada. Llamando handlePostLoginReset.");
         await handlePostLoginReset(session.user.id);
+        console.log("AuthPage useEffect: Navegando a /app.");
         navigate('/app');
+      } else {
+        console.log("AuthPage useEffect: No se encontró sesión.");
       }
+      console.log("AuthPage useEffect: checkUser finalizado.");
     };
     checkUser();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("AuthPage onAuthStateChange: Evento:", event, "Sesión:", session ? "existe" : "nula");
       if (session) {
         if (event === 'SIGNED_IN') { // Solo restablecer en el evento de inicio de sesión real
+          console.log("AuthPage onAuthStateChange: Evento SIGNED_IN. Llamando handlePostLoginReset.");
           await handlePostLoginReset(session.user.id);
         }
+        console.log("AuthPage onAuthStateChange: Navegando a /app.");
         navigate('/app');
+      } else {
+        console.log("AuthPage onAuthStateChange: No hay sesión, navegando a /.");
+        navigate('/');
       }
     });
 
     return () => {
+      console.log("AuthPage useEffect cleanup: Desuscribiendo listener de autenticación.");
       authListener.subscription.unsubscribe();
     };
-  }, [navigate, handlePostLoginReset]); // Añadir handlePostLoginReset a las dependencias
+  }, [navigate, handlePostLoginReset]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    console.log("handleLogin: Intentando iniciar sesión...");
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
+      console.error("handleLogin: Error al iniciar sesión:", error);
       toast({ title: "Error de inicio de sesión", description: error.message, variant: "destructive" });
     } else {
+      console.log("handleLogin: Inicio de sesión exitoso. Datos:", data);
       toast({ title: "Inicio de sesión exitoso", description: "Bienvenido de nuevo." });
       // La redirección y el restablecimiento del congelador son manejados por el listener onAuthStateChange
     }
-    setLoading(false);
+    setLoading(false); // Asegurarse de que el estado de carga se restablezca
+    console.log("handleLogin: Finalizado.");
   };
 
   return (
