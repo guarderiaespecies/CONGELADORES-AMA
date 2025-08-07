@@ -18,18 +18,18 @@ const Index = () => {
   const fetchUserProfile = useCallback(async (userId: string) => {
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
-      .select('role, current_freezer_id')
+      .select('role, current_freezer_id, default_freezer_id') // Añadir default_freezer_id
       .eq('id', userId)
       .single();
 
     if (profileError && profileError.code !== 'PGRST116') { // PGRST116 means no rows found
       console.error("Error al obtener el perfil del usuario:", profileError);
       toast({ title: "Error de perfil", description: profileError.message, variant: "destructive" });
-      return { role: null, freezerId: null };
+      return { role: null, freezerId: null, defaultFreezerId: null };
     } else if (profileData) {
-      return { role: profileData.role, freezerId: profileData.current_freezer_id };
+      return { role: profileData.role, freezerId: profileData.current_freezer_id, defaultFreezerId: profileData.default_freezer_id };
     }
-    return { role: null, freezerId: null };
+    return { role: null, freezerId: null, defaultFreezerId: null };
   }, [toast]);
 
   const fetchFreezerName = useCallback(async (freezerId: string | null) => {
@@ -66,11 +66,28 @@ const Index = () => {
     }
 
     setUser(session.user);
-    const { role, freezerId } = await fetchUserProfile(session.user.id);
+    const { role, freezerId, defaultFreezerId } = await fetchUserProfile(session.user.id);
     setUserRole(role);
-    setCurrentFreezerId(freezerId);
 
-    const name = await fetchFreezerName(freezerId);
+    let finalFreezerId = freezerId;
+    // Si el usuario es 'User' y no tiene current_freezer_id, intenta usar default_freezer_id
+    if (role === 'User' && !freezerId && defaultFreezerId) {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ current_freezer_id: defaultFreezerId })
+        .eq('id', session.user.id);
+
+      if (updateError) {
+        console.error("Error al asignar default_freezer_id:", updateError);
+        toast({ title: "Error", description: "No se pudo asignar el congelador por defecto.", variant: "destructive" });
+      } else {
+        finalFreezerId = defaultFreezerId;
+        toast({ title: "Congelador asignado", description: "Se ha asignado tu congelador por defecto.", duration: 3000 });
+      }
+    }
+    setCurrentFreezerId(finalFreezerId);
+
+    const name = await fetchFreezerName(finalFreezerId);
     setCurrentFreezerName(name);
 
     setLoading(false);
@@ -100,6 +117,8 @@ const Index = () => {
       </div>
     );
   }
+
+  console.log("Index Page - userRole:", userRole, "currentFreezerName:", currentFreezerName, "currentFreezerId:", currentFreezerId); // Log de depuración
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">

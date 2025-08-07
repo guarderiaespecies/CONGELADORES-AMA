@@ -154,6 +154,8 @@ const ChangeFreezerPage: React.FC = () => {
     );
   }
 
+  console.log("ChangeFreezerPage - userRole:", userRole, "currentFreezerName:", currentFreezerName, "freezers:", freezers); // Log de depuración
+
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
       <AppHeader
