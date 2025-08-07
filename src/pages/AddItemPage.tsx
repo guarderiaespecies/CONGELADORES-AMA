@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar as CalendarIcon, ArrowLeft } from "lucide-react"; // Importar ArrowLeft
 import { format } from "date-fns";
 import { es } from 'date-fns/locale'; // Importar el locale español
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -168,9 +168,19 @@ const AddItemPage: React.FC = () => {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto mt-8 shadow-lg">
+    <Card className="w-full max-w-md mx-auto mt-8 shadow-lg relative"> {/* Añadir 'relative' para posicionamiento absoluto */}
       <CardHeader>
         <CardTitle className="text-center">Añadir Nuevo Elemento</CardTitle>
+        {/* Botón de volver atrás */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate('/app')}
+          className="absolute top-2 right-2 h-8 w-8"
+        >
+          <ArrowLeft className="h-5 w-5" />
+          <span className="sr-only">Volver</span>
+        </Button>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
