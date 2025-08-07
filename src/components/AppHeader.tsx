@@ -1,9 +1,10 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button"; // Importar Button
-import { useNavigate } from "react-router-dom"; // Importar useNavigate
-import { supabase } from '@/lib/supabase'; // Importar supabase
-import { useToast } from "@/components/ui/use-toast"; // Importar useToast
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { supabase } from '@/lib/supabase';
+import { useToast } from "@/components/ui/use-toast";
+import { X } from 'lucide-react'; // Importar el icono X
 
 interface AppHeaderProps {
   userEmail: string | undefined;
@@ -22,12 +23,12 @@ const AppHeader: React.FC<AppHeaderProps> = ({ userEmail, userRole, currentFreez
       toast({ title: "Error al cerrar sesión", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Sesión cerrada", description: "Has cerrado sesión correctamente." });
-      navigate('/'); // Redirigir a la página de inicio de sesión
+      navigate('/');
     }
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto mb-8 shadow-lg">
+    <Card className="w-full max-w-md mx-auto mb-8 shadow-lg relative"> {/* Añadir 'relative' para posicionamiento absoluto */}
       <CardHeader>
         <img src="/logotipo-azul.png" alt="Logo Principado de Asturias" className="mx-auto mb-4 h-20" />
         <CardTitle className="text-center text-xl font-normal">
@@ -47,14 +48,17 @@ const AppHeader: React.FC<AppHeaderProps> = ({ userEmail, userRole, currentFreez
         {!currentFreezerName && userRole === 'User' && (
           <p className="text-md text-gray-600 text-red-500">No hay congelador asociado.</p>
         )}
-        <Button
-          variant="outline"
-          onClick={handleLogout}
-          className="mt-4 w-full"
-        >
-          Cerrar Sesión
-        </Button>
       </CardContent>
+      {/* Botón de cerrar sesión en la esquina superior derecha */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={handleLogout}
+        className="absolute top-2 right-2 h-8 w-8" // Posicionamiento y tamaño
+      >
+        <X className="h-5 w-5 font-bold" /> {/* Icono X en negrita */}
+        <span className="sr-only">Cerrar Sesión</span>
+      </Button>
     </Card>
   );
 };
