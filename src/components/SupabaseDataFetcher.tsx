@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface Item {
   id: string;
   name: string;
-  // Add other properties of your 'items' table here if known
+  description?: string; // Make description optional as it might not always be present
   [key: string]: any; // Allow any other properties
 }
 
@@ -68,13 +68,17 @@ const SupabaseDataFetcher = () => {
         )}
 
         {!loading && !error && items && items.length > 0 && (
-          <ul className="list-disc list-inside text-left space-y-2">
+          <div className="space-y-4">
             {items.map((item) => (
-              <li key={item.id || JSON.stringify(item)} className="p-2 bg-gray-50 rounded-md text-gray-700 break-words">
-                {JSON.stringify(item, null, 2)}
-              </li>
+              <div key={item.id || JSON.stringify(item)} className="p-4 bg-gray-50 rounded-md shadow-sm text-left">
+                <p className="text-sm text-gray-500">ID: <span className="font-medium text-gray-800">{item.id}</span></p>
+                <p className="text-sm text-gray-500">Nombre: <span className="font-medium text-gray-800">{item.name}</span></p>
+                {item.description && (
+                  <p className="text-sm text-gray-500">Descripción: <span className="font-medium text-gray-800">{item.description}</span></p>
+                )}
+              </div>
             ))}
-          </ul>
+          </div>
         )}
       </CardContent>
     </Card>
