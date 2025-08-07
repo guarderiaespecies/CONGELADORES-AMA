@@ -54,33 +54,22 @@ const AuthPage = () => {
   }, [toast]);
 
   useEffect(() => {
-    const checkUser = async () => {
-      console.log("AuthPage useEffect: Iniciando checkUser.");
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        console.log("AuthPage useEffect: Sesión encontrada. Llamando handlePostLoginReset.");
-        await handlePostLoginReset(session.user.id);
-        console.log("AuthPage useEffect: Navegando a /app.");
-        navigate('/app');
-      } else {
-        console.log("AuthPage useEffect: No se encontró sesión.");
-      }
-      console.log("AuthPage useEffect: checkUser finalizado.");
-    };
-    checkUser();
-
+    // Este efecto ahora solo configura el listener para los cambios de estado de autenticación.
+    // La verificación de la sesión inicial se maneja mediante el evento 'INITIAL_SESSION' del listener.
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("AuthPage onAuthStateChange: Evento:", event, "Sesión:", session ? "existe" : "nula");
       if (session) {
-        if (event === 'SIGNED_IN') { // Solo restablecer en el evento de inicio de sesión real
-          console.log("AuthPage onAuthStateChange: Evento SIGNED_IN. Llamando handlePostLoginReset.");
+        // Solo realizar el restablecimiento post-login y navegar si realmente se ha iniciado sesión o es la sesión inicial
+        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+          console.log("AuthPage onAuthStateChange: Evento SIGNED_IN/INITIAL_SESSION. Llamando handlePostLoginReset.");
           await handlePostLoginReset(session.user.id);
+          console.log("AuthPage onAuthStateChange: Navegando a /app.");
+          navigate('/app');
         }
-        console.log("AuthPage onAuthStateChange: Navegando a /app.");
-        navigate('/app');
       } else {
-        console.log("AuthPage onAuthStateChange: No hay sesión, navegando a /.");
-        navigate('/');
+        // Si la sesión es nula y estamos en la AuthPage, no hacer nada.
+        // El usuario ha cerrado sesión y debe permanecer en la página de inicio de sesión.
+        console.log("AuthPage onAuthStateChange: No hay sesión. Permaneciendo en la página de autenticación.");
       }
     });
 
@@ -101,9 +90,9 @@ const AuthPage = () => {
     } else {
       console.log("handleLogin: Inicio de sesión exitoso. Datos:", data);
       toast({ title: "Inicio de sesión exitoso", description: "Bienvenido de nuevo." });
-      // La redirección y el restablecimiento del congelador son manejados por el listener onAuthStateChange
+      // El listener onAuthStateChange se encargará de la navegación a /app
     }
-    setLoading(false); // Asegurarse de que el estado de carga se restablezca
+    setLoading(false);
     console.log("handleLogin: Finalizado.");
   };
 
