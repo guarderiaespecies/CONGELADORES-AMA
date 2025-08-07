@@ -49,6 +49,8 @@
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --green-underline: 120 60% 70%; /* Nuevo color verde claro para el subrayado */
   }
 
   .dark {

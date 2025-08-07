@@ -53,9 +53,9 @@ const AuthPage = () => {
         <CardHeader>
           <img src="/logotipo-azul.png" alt="Logo Principado de Asturias" className="mx-auto mb-4 h-20" />
           <CardTitle className="text-center text-xl font-normal">
-            Registro CONGELADORES
+            Registro <span className="font-bold">CONGELADORES</span>
             <br />
-            <span className="text-xl font-normal text-gray-600">Agentes Medioambientales Asturias</span>
+            <span className="text-xl font-normal text-gray-600 border-b-2 border-[var(--green-underline)]">Agentes Medioambientales Asturias</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
