@@ -1,13 +1,15 @@
-import React, { useState } from "react"; // Import useState
+import React, { useState } from "react";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import SupabaseDataFetcher from "@/components/SupabaseDataFetcher";
-import AddItemForm from "@/components/AddItemForm"; // Import the new component
+import AddItemForm from "@/components/AddItemForm";
+import { Button } from "@/components/ui/button"; // Import Button
+import { Link } from "react-router-dom"; // Import Link
 
 const Index = () => {
-  const [refreshKey, setRefreshKey] = useState(0); // State to force SupabaseDataFetcher refresh
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const handleNewItemAdded = () => {
-    setRefreshKey(prevKey => prevKey + 1); // Increment key to force re-render of SupabaseDataFetcher
+    setRefreshKey(prevKey => prevKey + 1);
   };
 
   return (
@@ -17,12 +19,15 @@ const Index = () => {
         <p className="text-xl text-gray-600">
           Start building your amazing project here!
         </p>
+        <div className="mt-4">
+          <Link to="/auth">
+            <Button>Ir a Autenticación</Button>
+          </Link>
+        </div>
       </div>
       
-      {/* Add the AddItemForm component here */}
       <AddItemForm onNewItemAdded={handleNewItemAdded} />
 
-      {/* Add the SupabaseDataFetcher component here, with a key to force refresh */}
       <SupabaseDataFetcher key={refreshKey} />
 
       <MadeWithDyad />
