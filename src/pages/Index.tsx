@@ -123,7 +123,12 @@ const Index = () => {
           </Button>
         )}
         <Button variant="outline" className="col-span-2 h-12">Ver Inventario</Button>
-        <Button className="bg-green-600 hover:bg-green-700 text-white text-lg py-6 h-auto">Añadir Elementos</Button>
+        <Button
+          className="bg-green-600 hover:bg-green-700 text-white text-lg py-6 h-auto"
+          onClick={() => navigate('/add-item')} // Navegar a la nueva ruta
+        >
+          AÑADIR
+        </Button>
         <Button className="bg-red-600 hover:bg-red-700 text-white text-lg py-6 h-auto">Retirar Elementos</Button>
       </div>
 
