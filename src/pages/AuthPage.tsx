@@ -66,7 +66,7 @@ const AuthPage = () => {
                 type="email" // Supabase requiere formato de email para autenticación
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="ej: manuel.garciadiaz@dominio.com"
+                placeholder="Introduce tu usuario" // Changed placeholder
                 required
               />
             </div>
