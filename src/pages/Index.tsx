@@ -67,7 +67,6 @@ const Index = () => {
 
     setUser(session.user);
     const { role, freezerId, defaultFreezerId } = await fetchUserProfile(session.user.id);
-    console.log("Index Page - Fetched Profile Data:", { role, freezerId, defaultFreezerId }); // Nuevo log
     setUserRole(role);
 
     let finalFreezerId = freezerId;
@@ -82,14 +81,13 @@ const Index = () => {
         console.error("Error al asignar default_freezer_id:", updateError);
         toast({ title: "Error", description: "No se pudo asignar el congelador por defecto.", variant: "destructive" });
       } else {
-        finalFreezerId = defaultFreeizerId;
+        finalFreezerId = defaultFreezerId;
         toast({ title: "Congelador asignado", description: "Se ha asignado tu congelador por defecto.", duration: 3000 });
       }
     }
     setCurrentFreezerId(finalFreezerId);
 
     const name = await fetchFreezerName(finalFreezerId);
-    console.log("Index Page - Fetched Freezer Name:", name); // Nuevo log
     setCurrentFreezerName(name);
 
     setLoading(false);
@@ -120,7 +118,7 @@ const Index = () => {
     );
   }
 
-  console.log("Index Page - Render State: userRole:", userRole, "currentFreezerName:", currentFreezerName, "currentFreezerId:", currentFreezerId); // Log de depuración final
+  console.log("Index Page - userRole:", userRole, "currentFreezerName:", currentFreezerName, "currentFreezerId:", currentFreezerId); // Log de depuración
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">

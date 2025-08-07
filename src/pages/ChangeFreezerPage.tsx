@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } => "@/components/ui/label";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import AppHeader from "@/components/AppHeader"; // Import the reusable header
@@ -77,13 +77,11 @@ const ChangeFreezerPage: React.FC = () => {
 
     setUser(session.user);
     const { role, freezerId } = await fetchUserProfile(session.user.id);
-    console.log("ChangeFreezerPage - Fetched Profile Data:", { role, freezerId }); // Nuevo log
     setUserRole(role);
     setCurrentFreezerId(freezerId);
     setSelectedFreezerId(freezerId); // Set initial selection
 
     const name = await fetchFreezerName(freezerId);
-    console.log("ChangeFreezerPage - Fetched Freezer Name:", name); // Nuevo log
     setCurrentFreezerName(name);
 
     // Fetch all freezers
@@ -100,7 +98,6 @@ const ChangeFreezerPage: React.FC = () => {
       });
     } else {
       setFreezers(freezersData || []);
-      console.log("ChangeFreezerPage - Fetched All Freezers:", freezersData); // Nuevo log
     }
     setLoading(false);
   }, [navigate, toast, fetchUserProfile, fetchFreezerName]);
@@ -145,7 +142,6 @@ const ChangeFreezerPage: React.FC = () => {
         description: "Congelador asociado actualizado correctamente.",
       });
       navigate('/app'); // Go back to the main app page
-      console.log("ChangeFreezerPage - Navigated back to /app after saving."); // Nuevo log
     }
     setLoading(false);
   };
@@ -158,7 +154,7 @@ const ChangeFreezerPage: React.FC = () => {
     );
   }
 
-  console.log("ChangeFreezerPage - Render State: userRole:", userRole, "currentFreezerName:", currentFreezerName, "freezers:", freezers); // Log de depuración final
+  console.log("ChangeFreezerPage - userRole:", userRole, "currentFreezerName:", currentFreezerName, "freezers:", freezers); // Log de depuración
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
