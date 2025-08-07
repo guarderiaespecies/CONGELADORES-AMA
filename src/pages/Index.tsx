@@ -1,60 +1,82 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { supabase } from '@/lib/supabase';
 import { useToast } from "@/components/ui/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import AppHeader from "@/components/AppHeader"; // Import the new AppHeader component
 
 const Index = () => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [currentFreezerId, setCurrentFreezerId] = useState<string | null>(null);
+  const [currentFreezerName, setCurrentFreezerName] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const fetchUserProfile = useCallback(async (userId: string) => {
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('role, current_freezer_id')
+      .eq('id', userId)
+      .single();
+
+    if (profileError && profileError.code !== 'PGRST116') { // PGRST116 means no rows found
+      console.error("Error al obtener el perfil del usuario:", profileError);
+      toast({ title: "Error de perfil", description: profileError.message, variant: "destructive" });
+      return { role: null, freezerId: null };
+    } else if (profileData) {
+      return { role: profileData.role, freezerId: profileData.current_freezer_id };
+    }
+    return { role: null, freezerId: null };
+  }, [toast]);
+
+  const fetchFreezerName = useCallback(async (freezerId: string | null) => {
+    if (!freezerId) return null;
+    const { data, error } = await supabase
+      .from('freezers')
+      .select('name')
+      .eq('id', freezerId)
+      .single();
+
+    if (error) {
+      console.error("Error fetching freezer name:", error);
+      return null;
+    }
+    return data?.name || null;
+  }, []);
+
+  const checkUserAndRole = useCallback(async () => {
+    setLoading(true);
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError) {
+      console.error("Error getting session:", sessionError);
+      toast({ title: "Error de sesión", description: sessionError.message, variant: "destructive" });
+      navigate('/');
+      setLoading(false);
+      return;
+    }
+
+    if (!session) {
+      navigate('/');
+      setLoading(false);
+      return;
+    }
+
+    setUser(session.user);
+    const { role, freezerId } = await fetchUserProfile(session.user.id);
+    setUserRole(role);
+    setCurrentFreezerId(freezerId);
+
+    const name = await fetchFreezerName(freezerId);
+    setCurrentFreezerName(name);
+
+    setLoading(false);
+  }, [navigate, toast, fetchUserProfile, fetchFreezerName]);
+
   useEffect(() => {
-    const checkUserAndRole = async () => {
-      setLoading(true);
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-      if (sessionError) {
-        console.error("Error getting session:", sessionError);
-        toast({ title: "Error de sesión", description: sessionError.message, variant: "destructive" });
-        navigate('/');
-        setLoading(false);
-        return;
-      }
-
-      if (!session) {
-        navigate('/');
-        setLoading(false);
-        return;
-      }
-
-      setUser(session.user);
-
-      try {
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profileError && profileError.code !== 'PGRST116') {
-          console.error("Error al obtener el perfil del usuario:", profileError);
-          toast({ title: "Error de perfil", description: profileError.message, variant: "destructive" });
-        } else if (profileData) {
-          setUserRole(profileData.role);
-        }
-      } catch (err: any) {
-        console.error("Error inesperado al obtener el perfil:", err);
-        toast({ title: "Error inesperado", description: err.message, variant: "destructive" });
-      } finally {
-        setLoading(false);
-      }
-    };
-
     checkUserAndRole();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -62,14 +84,14 @@ const Index = () => {
         navigate('/');
       } else {
         setUser(session.user);
-        checkUserAndRole();
+        checkUserAndRole(); // Re-check user and role on auth state change
       }
     });
 
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [navigate, toast]);
+  }, [navigate, checkUserAndRole]);
 
   if (loading) {
     return (
@@ -81,23 +103,20 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
-      {/* Tarjeta de Encabezado */}
-      <Card className="w-full max-w-md mx-auto mb-8 shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-center text-2xl font-bold text-primary">CONGELADORES A.M.A</CardTitle>
-        </CardHeader>
-        <CardContent className="text-center">
-          <p className="text-lg font-semibold text-gray-800">{user?.email}</p>
-          {userRole && (userRole === 'Administrador' || userRole === 'Veterinario') && (
-            <p className="text-md text-gray-600">Rol: <span className="font-medium">{userRole}</span></p>
-          )}
-        </CardContent>
-      </Card>
+      <AppHeader
+        userEmail={user?.email}
+        userRole={userRole}
+        currentFreezerName={currentFreezerName}
+      />
 
       {/* Botones de Acción */}
       <div className="grid grid-cols-2 gap-4 w-full max-w-md mb-8">
         <Button variant="outline" className="h-12">Deshacer</Button>
-        <Button variant="outline" className="h-12">Cambiar Asociación</Button>
+        {(userRole === 'User' || userRole === 'Administrator') && (
+          <Button variant="outline" className="h-12" onClick={() => navigate('/change-freezer')}>
+            Cambiar Congelador
+          </Button>
+        )}
         <Button variant="outline" className="col-span-2 h-12">Ver Inventario</Button>
         <Button className="bg-green-600 hover:bg-green-700 text-white text-lg py-6 h-auto">Añadir Elementos</Button>
         <Button className="bg-red-600 hover:bg-red-700 text-white text-lg py-6 h-auto">Retirar Elementos</Button>
