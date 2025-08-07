@@ -1,7 +1,15 @@
+import React, { useState } from "react"; // Import useState
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import SupabaseDataFetcher from "@/components/SupabaseDataFetcher"; // Import the component
+import SupabaseDataFetcher from "@/components/SupabaseDataFetcher";
+import AddItemForm from "@/components/AddItemForm"; // Import the new component
 
 const Index = () => {
+  const [refreshKey, setRefreshKey] = useState(0); // State to force SupabaseDataFetcher refresh
+
+  const handleNewItemAdded = () => {
+    setRefreshKey(prevKey => prevKey + 1); // Increment key to force re-render of SupabaseDataFetcher
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
       <div className="text-center mb-8">
@@ -11,8 +19,11 @@ const Index = () => {
         </p>
       </div>
       
-      {/* Add the SupabaseDataFetcher component here */}
-      <SupabaseDataFetcher />
+      {/* Add the AddItemForm component here */}
+      <AddItemForm onNewItemAdded={handleNewItemAdded} />
+
+      {/* Add the SupabaseDataFetcher component here, with a key to force refresh */}
+      <SupabaseDataFetcher key={refreshKey} />
 
       <MadeWithDyad />
     </div>
