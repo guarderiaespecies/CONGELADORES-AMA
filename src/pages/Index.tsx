@@ -3,41 +3,71 @@ import { MadeWithDyad } from "@/components/made-with-dyad";
 import SupabaseDataFetcher from "@/components/SupabaseDataFetcher";
 import AddItemForm from "@/components/AddItemForm";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
-import { supabase } from '@/lib/supabase'; // Import supabase client
-import { useToast } from "@/components/ui/use-toast"; // Import useToast
+import { useNavigate } from "react-router-dom";
+import { supabase } from '@/lib/supabase';
+import { useToast } from "@/components/ui/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Index = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null); // State to hold user info
+  const [user, setUser] = useState<any>(null);
+  const [userRole, setUserRole] = useState<string | null>(null); // Nuevo estado para el rol del usuario
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error("Error getting session:", error);
-        toast({ title: "Error de sesión", description: error.message, variant: "destructive" });
-        navigate('/'); // Redirect to auth if error
+    const checkUserAndRole = async () => {
+      setLoading(true);
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        console.error("Error getting session:", sessionError);
+        toast({ title: "Error de sesión", description: sessionError.message, variant: "destructive" });
+        navigate('/');
+        setLoading(false);
         return;
       }
+
       if (!session) {
-        navigate('/'); // Redirect to auth if no session
-      } else {
-        setUser(session.user);
+        navigate('/');
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+
+      setUser(session.user);
+
+      // Asumiendo que tienes una tabla 'profiles' con 'id' (UUID, vinculado a auth.users.id) y 'role' (texto)
+      try {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError && profileError.code !== 'PGRST116') { // PGRST116 significa que no se encontraron filas (no hay perfil)
+          console.error("Error al obtener el perfil del usuario:", profileError);
+          toast({ title: "Error de perfil", description: profileError.message, variant: "destructive" });
+        } else if (profileData) {
+          setUserRole(profileData.role);
+        }
+      } catch (err: any) {
+        console.error("Error inesperado al obtener el perfil:", err);
+        toast({ title: "Error inesperado", description: err.message, variant: "destructive" });
+      } finally {
+        setLoading(false);
+      }
     };
 
-    checkUser();
+    checkUserAndRole();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) {
-        navigate('/'); // Redirect to auth if user logs out
+        navigate('/');
       } else {
         setUser(session.user);
+        // Volver a obtener el rol si la sesión cambia (ej. el usuario inicia sesión)
+        checkUserAndRole();
       }
     });
 
@@ -50,17 +80,7 @@ const Index = () => {
     setRefreshKey(prevKey => prevKey + 1);
   };
 
-  const handleLogout = async () => {
-    setLoading(true);
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast({ title: "Error al cerrar sesión", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Sesión cerrada", description: "Has cerrado sesión correctamente." });
-      navigate('/'); // Redirect to auth page after logout
-    }
-    setLoading(false);
-  };
+  // La función handleLogout y el botón de cerrar sesión han sido eliminados según tu solicitud.
 
   if (loading) {
     return (
@@ -70,23 +90,34 @@ const Index = () => {
     );
   }
 
-  // Only render content if user is authenticated
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold mb-4">Bienvenido a tu App, {user?.email}!</h1>
-        <p className="text-xl text-gray-600">
-          Aquí puedes gestionar tus ítems.
-        </p>
-        <div className="mt-4">
-          <Button onClick={handleLogout} disabled={loading}>
-            Cerrar Sesión
-          </Button>
-        </div>
-      </div>
-      
-      <AddItemForm onNewItemAdded={handleNewItemAdded} />
+    <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
+      {/* Tarjeta de Encabezado */}
+      <Card className="w-full max-w-md mx-auto mb-8 shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-center text-2xl font-bold text-primary">CONGELADORES A.M.A</CardTitle>
+        </CardHeader>
+        <CardContent className="text-center">
+          <p className="text-lg font-semibold text-gray-800">{user?.email}</p>
+          {userRole && (userRole === 'Administrador' || userRole === 'Veterinario') && (
+            <p className="text-md text-gray-600">Rol: <span className="font-medium">{userRole}</span></p>
+          )}
+          {/* Nota: Para que los roles funcionen, necesitas una tabla 'profiles' en Supabase
+              con 'id' (UUID, clave primaria, vinculada a auth.users.id) y 'role' (texto) columnas. */}
+        </CardContent>
+      </Card>
 
+      {/* Botones de Acción */}
+      <div className="grid grid-cols-2 gap-4 w-full max-w-md mb-8">
+        <Button variant="outline" className="h-12">Deshacer</Button>
+        <Button variant="outline" className="h-12">Cambiar Asociación</Button>
+        <Button variant="outline" className="col-span-2 h-12">Ver Inventario</Button>
+        <Button className="bg-green-600 hover:bg-green-700 text-white text-lg py-6 h-auto">Añadir Elementos</Button>
+        <Button className="bg-red-600 hover:bg-red-700 text-white text-lg py-6 h-auto">Retirar Elementos</Button>
+      </div>
+
+      {/* Formularios y Fetchers existentes (movidos debajo de los botones) */}
+      <AddItemForm onNewItemAdded={handleNewItemAdded} />
       <SupabaseDataFetcher key={refreshKey} />
 
       <MadeWithDyad />
