@@ -23,7 +23,6 @@ const Index = () => {
       .single();
 
     if (profileError && profileError.code !== 'PGRST116') {
-      console.error("Error al obtener el perfil del usuario:", profileError);
       toast({ title: "Error de perfil", description: profileError.message, variant: "destructive" });
       return { role: null, freezerId: null, defaultFreezerId: null };
     } else if (profileData) {
@@ -41,7 +40,6 @@ const Index = () => {
       .single();
 
     if (error) {
-      console.error("Error fetching freezer name:", error);
       return null;
     }
     return data?.name || null;
@@ -52,7 +50,6 @@ const Index = () => {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
     if (sessionError) {
-      console.error("Error getting session:", sessionError);
       toast({ title: "Error de sesión", description: sessionError.message, variant: "destructive" });
       navigate('/');
       setLoading(false);
@@ -66,7 +63,6 @@ const Index = () => {
     }
 
     setUser(session.user);
-    // Aquí, el current_freezer_id ya debería estar restablecido si fue un inicio de sesión
     const { role, freezerId } = await fetchUserProfile(session.user.id);
     setUserRole(role);
     setCurrentFreezerId(freezerId);
@@ -78,15 +74,13 @@ const Index = () => {
   }, [navigate, toast, fetchUserProfile, fetchFreezerName]);
 
   useEffect(() => {
-    checkUserAndRole(); // Llamada inicial para cargar los datos
+    checkUserAndRole();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) {
         navigate('/');
       } else {
         setUser(session.user);
-        // Re-verificar usuario y rol en caso de cambios de estado de autenticación
-        // (ej. si un admin cambia el rol o el congelador por defecto)
         checkUserAndRole();
       }
     });
@@ -103,8 +97,6 @@ const Index = () => {
       </div>
     );
   }
-
-  console.log("Index Page - userRole:", userRole, "currentFreezerName:", currentFreezerName, "currentFreezerId:", currentFreezerId); // Log de depuración
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
@@ -125,11 +117,11 @@ const Index = () => {
         <Button variant="outline" className="col-span-2 h-12">Ver Inventario</Button>
         <Button
           className="bg-green-600 hover:bg-green-700 text-white text-lg py-6 h-auto"
-          onClick={() => navigate('/add-item')} // Navegar a la nueva ruta
+          onClick={() => navigate('/add-item')}
         >
           AÑADIR
         </Button>
-        <Button className="bg-red-600 hover:bg-red-700 text-white text-lg py-6 h-auto">Retirar Elementos</Button>
+        <Button className="bg-red-600 hover:bg-red-700 text-white text-lg py-6 h-auto">RETIRAR</Button>
       </div>
 
       <MadeWithDyad />

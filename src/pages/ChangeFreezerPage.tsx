@@ -33,7 +33,6 @@ const ChangeFreezerPage: React.FC = () => {
       .single();
 
     if (profileError && profileError.code !== 'PGRST116') {
-      console.error("Error al obtener el perfil del usuario:", profileError);
       toast({ title: "Error de perfil", description: profileError.message, variant: "destructive" });
       return { role: null, freezerId: null };
     } else if (profileData) {
@@ -51,7 +50,6 @@ const ChangeFreezerPage: React.FC = () => {
       .single();
 
     if (error) {
-      console.error("Error fetching freezer name:", error);
       return null;
     }
     return data?.name || null;
@@ -62,7 +60,6 @@ const ChangeFreezerPage: React.FC = () => {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
     if (sessionError) {
-      console.error("Error getting session:", sessionError);
       toast({ title: "Error de sesión", description: sessionError.message, variant: "destructive" });
       navigate('/');
       setLoading(false);
@@ -90,7 +87,6 @@ const ChangeFreezerPage: React.FC = () => {
       .select('id, name');
 
     if (freezersError) {
-      console.error("Error fetching freezers:", freezersError);
       toast({
         title: "Error",
         description: "No se pudieron cargar los congeladores.",
@@ -130,7 +126,6 @@ const ChangeFreezerPage: React.FC = () => {
       .eq('id', user.id);
 
     if (error) {
-      console.error("Error al actualizar el congelador asociado:", error);
       toast({
         title: "Error",
         description: "No se pudo actualizar el congelador asociado.",
@@ -153,8 +148,6 @@ const ChangeFreezerPage: React.FC = () => {
       </div>
     );
   }
-
-  console.log("ChangeFreezerPage - userRole:", userRole, "currentFreezerName:", currentFreezerName, "freezers:", freezers); // Log de depuración
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
