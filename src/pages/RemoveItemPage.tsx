@@ -171,6 +171,7 @@ const RemoveItemPage: React.FC = () => {
           title: "Éxito",
           description: `${selectedItems.size} elemento(s) retirado(s) correctamente.`,
         });
+        sessionStorage.setItem('hasMadeChanges', 'true'); // Activar el botón Modificar
         setSelectedItems(new Set()); // Clear selection
         if (currentFreezerId) {
           fetchInventory(currentFreezerId); // Refresh the list

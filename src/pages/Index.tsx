@@ -12,6 +12,7 @@ const Index = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [currentFreezerId, setCurrentFreezerId] = useState<string | null>(null);
   const [currentFreezerName, setCurrentFreezerName] = useState<string | null>(null);
+  const [hasMadeChanges, setHasMadeChanges] = useState<boolean>(false); // Nuevo estado para controlar la activación del botón Modificar
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -65,10 +66,14 @@ const Index = () => {
     setUser(session.user);
     const { role, freezerId } = await fetchUserProfile(session.user.id);
     setUserRole(role);
-    setCurrentFreezerId(freezerId); // <-- Corregido aquí: de freeizerId a freezerId
+    setCurrentFreezerId(freezerId);
 
     const name = await fetchFreezerName(freezerId);
     setCurrentFreezerName(name);
+
+    // Cargar el estado de cambios desde sessionStorage
+    const changesMade = sessionStorage.getItem('hasMadeChanges') === 'true';
+    setHasMadeChanges(changesMade);
 
     setLoading(false);
   }, [navigate, toast, fetchUserProfile, fetchFreezerName]);
@@ -108,7 +113,14 @@ const Index = () => {
 
       {/* Botones de Acción */}
       <div className="grid grid-cols-2 gap-4 w-full max-w-md mb-8">
-        <Button variant="outline" className="h-12">Deshacer</Button>
+        <Button
+          variant="outline"
+          className="h-12"
+          onClick={() => navigate('/edit-item')} // Navegar a la nueva página de edición
+          disabled={!hasMadeChanges} // Deshabilitado si no se han hecho cambios
+        >
+          Modificar
+        </Button>
         {(userRole === 'User' || userRole === 'Administrator') && (
           <Button variant="outline" className="h-12" onClick={() => navigate('/change-freezer')}>
             Cambiar Congelador

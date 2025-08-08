@@ -8,7 +8,8 @@ import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
 import ChangeFreezerPage from "./pages/ChangeFreezerPage";
 import AddItemPage from "./pages/AddItemPage";
-import RemoveItemPage from "./pages/RemoveItemPage"; // Import the new page
+import RemoveItemPage from "./pages/RemoveItemPage";
+import EditItemPage from "./pages/EditItemPage"; // Import the new page
 
 const queryClient = new QueryClient();
 
@@ -23,7 +24,8 @@ const App = () => (
           <Route path="/app" element={<Index />} />
           <Route path="/change-freezer" element={<ChangeFreezerPage />} />
           <Route path="/add-item" element={<AddItemPage />} />
-          <Route path="/remove-item" element={<RemoveItemPage />} /> {/* New route for removing items */}
+          <Route path="/remove-item" element={<RemoveItemPage />} />
+          <Route path="/edit-item" element={<EditItemPage />} /> {/* New route for editing items */}
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
