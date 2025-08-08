@@ -67,7 +67,7 @@ const Index = () => {
     setUserRole(role);
     setCurrentFreezerId(freezerId);
 
-    const name = await fetchFreezerName(freeizerId);
+    const name = await fetchFreezerName(freezerId); // Corregido: freeizerId a freezerId
     setCurrentFreezerName(name);
 
     setLoading(false);
@@ -103,7 +103,7 @@ const Index = () => {
       <AppHeader
         userEmail={user?.email}
         userRole={userRole}
-        currentFreezerName={currentFreezerName}
+        currentFreezerName={currentFree freezerName}
       />
 
       {/* Botones de Acción */}
@@ -123,7 +123,7 @@ const Index = () => {
         </Button>
         <Button
           className="bg-red-600 hover:bg-red-700 text-white text-lg py-6 h-auto"
-          onClick={() => navigate('/remove-item')} // Navegar a la nueva página
+          onClick={() => navigate('/remove-item')}
         >
           RETIRAR
         </Button>
