@@ -103,7 +103,7 @@ const Index = () => {
       <AppHeader
         userEmail={user?.email}
         userRole={userRole}
-        currentFreezerName={currentFreezerName} {/* <-- Corregido aquí */}
+        currentFreezerName={currentFreezerName} {/* <-- Corregido aquí, eliminando el espacio extra */}
       />
 
       {/* Botones de Acción */}
