@@ -12,7 +12,7 @@ const Index = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [currentFreezerId, setCurrentFreezerId] = useState<string | null>(null);
   const [currentFreezerName, setCurrentFreezerName] = useState<string | null>(null);
-  const [hasMadeChanges, setHasMadeChanges] = useState<boolean>(false); // Nuevo estado para controlar la activación del botón Modificar
+  // Eliminado: const [hasMadeChanges, setHasMadeChanges] = useState<boolean>(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -71,9 +71,9 @@ const Index = () => {
     const name = await fetchFreezerName(freezerId);
     setCurrentFreezerName(name);
 
-    // Cargar el estado de cambios desde sessionStorage
-    const changesMade = sessionStorage.getItem('hasMadeChanges') === 'true';
-    setHasMadeChanges(changesMade);
+    // Eliminado: Cargar el estado de cambios desde sessionStorage
+    // Eliminado: const changesMade = sessionStorage.getItem('hasMadeChanges') === 'true';
+    // Eliminado: setHasMadeChanges(changesMade);
 
     setLoading(false);
   }, [navigate, toast, fetchUserProfile, fetchFreezerName]);
@@ -116,8 +116,8 @@ const Index = () => {
         <Button
           variant="outline"
           className="h-12"
-          onClick={() => navigate('/edit-item')} // Navegar a la nueva página de edición
-          disabled={!hasMadeChanges} // Deshabilitado si no se han hecho cambios
+          onClick={() => navigate('/edit-item')}
+          // Eliminado: disabled={!hasMadeChanges}
         >
           Modificar
         </Button>

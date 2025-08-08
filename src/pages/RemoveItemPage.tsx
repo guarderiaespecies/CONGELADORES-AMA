@@ -42,7 +42,7 @@ const RemoveItemPage: React.FC = () => {
   const navigate = useNavigate();
 
   const fetchInventory = useCallback(async (freezerId: string) => {
-    setLoading(true);
+    // Simplificando la gestión del estado de carga para evitar conflictos
     const { data, error } = await supabase
       .from('inventory')
       .select('*')
@@ -59,12 +59,11 @@ const RemoveItemPage: React.FC = () => {
     } else {
       setInventoryItems(data as InventoryItem[]);
     }
-    setLoading(false);
   }, [toast]);
 
   useEffect(() => {
     const checkUserAndLoadData = async () => {
-      setLoading(true);
+      setLoading(true); // Inicia la carga para toda la página
       const { data: { user: sessionUser } } = await supabase.auth.getUser();
 
       if (!sessionUser) {
@@ -74,6 +73,7 @@ const RemoveItemPage: React.FC = () => {
           variant: "destructive",
         });
         navigate('/');
+        setLoading(false); // Asegura que el estado de carga se desactive
         return;
       }
 
@@ -88,6 +88,7 @@ const RemoveItemPage: React.FC = () => {
       if (profileError && profileError.code !== 'PGRST116') {
         toast({ title: "Error", description: "No se pudo obtener el congelador actual del usuario.", variant: "destructive" });
         navigate('/app');
+        setLoading(false); // Asegura que el estado de carga se desactive
         return;
       } else if (profileData) {
         setCurrentFreezerId(profileData.current_freezer_id);
@@ -98,9 +99,10 @@ const RemoveItemPage: React.FC = () => {
             variant: "default",
           });
           navigate('/change-freezer');
+          setLoading(false); // Asegura que el estado de carga se desactive
           return;
         }
-        fetchInventory(profileData.current_freezer_id);
+        await fetchInventory(profileData.current_freezer_id); // Espera a que se cargue el inventario
       } else {
         toast({
           title: "Error",
@@ -109,6 +111,7 @@ const RemoveItemPage: React.FC = () => {
         });
         navigate('/app');
       }
+      setLoading(false); // Finaliza la carga para toda la página
     };
 
     checkUserAndLoadData();
@@ -171,7 +174,7 @@ const RemoveItemPage: React.FC = () => {
           title: "Éxito",
           description: `${selectedItems.size} elemento(s) retirado(s) correctamente.`,
         });
-        sessionStorage.setItem('hasMadeChanges', 'true'); // Activar el botón Modificar
+        // Eliminado: sessionStorage.setItem('hasMadeChanges', 'true'); // Activar el botón Modificar
         setSelectedItems(new Set()); // Clear selection
         if (currentFreezerId) {
           fetchInventory(currentFreezerId); // Refresh the list

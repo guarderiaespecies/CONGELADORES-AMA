@@ -138,7 +138,7 @@ const AddItemPage: React.FC = () => {
           title: "Éxito",
           description: "Ítem añadido correctamente.",
         });
-        sessionStorage.setItem('hasMadeChanges', 'true'); // Activar el botón Modificar
+        // Eliminado: sessionStorage.setItem('hasMadeChanges', 'true'); // Activar el botón Modificar
         setEntryDate(new Date());
         setSealNo('');
         setSpecies('');
