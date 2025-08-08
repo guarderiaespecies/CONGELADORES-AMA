@@ -67,7 +67,7 @@ const Index = () => {
     setUserRole(role);
     setCurrentFreezerId(freezerId);
 
-    const name = await fetchFreezerName(freezerId); // Corregido: freeizerId a freezerId
+    const name = await fetchFreezerName(freezerId);
     setCurrentFreezerName(name);
 
     setLoading(false);
@@ -103,7 +103,7 @@ const Index = () => {
       <AppHeader
         userEmail={user?.email}
         userRole={userRole}
-        currentFreezerName={currentFree freezerName}
+        currentFreezerName={currentFreezerName} {/* <-- Corregido aquí */}
       />
 
       {/* Botones de Acción */}
