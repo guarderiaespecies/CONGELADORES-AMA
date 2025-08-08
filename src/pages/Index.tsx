@@ -65,7 +65,7 @@ const Index = () => {
     setUser(session.user);
     const { role, freezerId } = await fetchUserProfile(session.user.id);
     setUserRole(role);
-    setCurrentFreezerId(freeizerId); // Corregido: freeizerId a freezerId
+    setCurrentFreezerId(freezerId); // <-- Corregido aquí: de freeizerId a freezerId
 
     const name = await fetchFreezerName(freezerId);
     setCurrentFreezerName(name);
