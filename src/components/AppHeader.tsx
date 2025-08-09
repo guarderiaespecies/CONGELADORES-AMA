@@ -16,6 +16,9 @@ const AppHeader: React.FC<AppHeaderProps> = ({ userEmail, userRole, currentFreez
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // DEBUG: Log the userRole prop
+  console.log("DEBUG: AppHeader - Received userRole:", userRole);
+
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {

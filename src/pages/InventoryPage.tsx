@@ -333,7 +333,7 @@ const InventoryPage: React.FC = () => {
                     <TableCell className="w-[120px]">{item.species}</TableCell>
                     <TableCell className="w-[100px]">{format(new Date(item.entry_date), "dd/MM/yyyy", { locale: es })}</TableCell>
                     <TableCell className="min-w-[150px]">{item.observations || '-'}</TableCell>
-                    {showAdminColumns && (
+                    {showAdminColumns ? ( // Only show these columns for Administrator
                       <>
                         <TableCell className="w-[120px]">{item.created_by_user_email}</TableCell>
                         <TableCell className="w-[150px]">{format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: es })}</TableCell>
@@ -344,6 +344,10 @@ const InventoryPage: React.FC = () => {
                           </Button>
                         </TableCell>
                       </>
+                    ) : (
+                      // For Veterinario, these cells are empty or not rendered if columns are hidden
+                      // No need to render empty cells if the TableHead is not rendered
+                      null
                     )}
                     <TableCell className="w-[60px] text-center">
                       {canEditStatus ? (
