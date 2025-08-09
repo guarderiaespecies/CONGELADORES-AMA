@@ -134,34 +134,34 @@ const Index = () => {
         currentFreezerName={currentFreezerName}
       />
 
-      <div className="grid grid-cols-2 gap-4 w-full max-w-md mb-8">
+      <div className="w-full max-w-md mb-8 space-y-4">
         <Button
-          variant="outline"
-          className="h-12"
-          onClick={() => navigate('/inventory')}
-        >
-          Modificar
-        </Button>
-        {(userRole === 'User' || userRole === 'Administrator') && (
-          <Button variant="outline" className="h-12" onClick={() => navigate('/change-freezer')}>
-            Cambiar Congelador
-          </Button>
-        )}
-        <Button variant="outline" className="col-span-2 h-12" onClick={() => navigate('/inventory')}>
-          Inventario
-        </Button>
-        <Button
-          className="bg-green-600 hover:bg-green-700 text-white text-lg py-6 h-auto"
+          className="bg-green-600 hover:bg-green-700 text-white text-lg py-6 h-auto w-full"
           onClick={() => navigate('/add-item')}
         >
           AÑADIR
         </Button>
         <Button
-          className="bg-red-600 hover:bg-red-700 text-white text-lg py-6 h-auto"
+          className="bg-red-600 hover:bg-red-700 text-white text-lg py-6 h-auto w-full"
           onClick={() => navigate('/remove-item')}
         >
           RETIRAR
         </Button>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Button
+            variant="outline"
+            className="h-12"
+            onClick={() => navigate('/inventory')}
+          >
+            Inventario
+          </Button>
+          {(userRole === 'User' || userRole === 'Administrator') && (
+            <Button variant="outline" className="h-12" onClick={() => navigate('/change-freezer')}>
+              Cambiar Congelador
+            </Button>
+          )}
+        </div>
       </div>
 
       <MadeWithDyad />
