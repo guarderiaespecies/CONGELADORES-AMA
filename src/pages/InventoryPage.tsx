@@ -193,25 +193,20 @@ const InventoryPage: React.FC = () => {
     };
   }, [navigate, toast, fetchInventory, fetchFreezerName]);
 
-  // Effect to calculate the offset for the table header
   useEffect(() => {
     const updateStickyPositions = () => {
       if (cardHeaderRef.current) {
-        // The CardHeader is sticky at top-0. Its height is cardHeaderRef.current.offsetHeight.
-        // So, the TableHeader should stick at this height.
         setTableHeaderStickyTop(cardHeaderRef.current.offsetHeight);
       }
     };
 
-    // Set initial position and update on resize
     updateStickyPositions();
     window.addEventListener('resize', updateStickyPositions);
 
-    // Clean up
     return () => {
       window.removeEventListener('resize', updateStickyPositions);
     };
-  }, [loading, inventoryItems]); // Depend on loading and inventoryItems to recalculate if content changes
+  }, [loading, inventoryItems]);
 
   const handleEditItem = (itemId: string) => {
     navigate(`/edit-item/${itemId}`);
@@ -287,9 +282,8 @@ const InventoryPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
-      <Card className="w-full max-w-4xl mx-auto mt-8 shadow-lg">
-        {/* CardHeader: Sticky to viewport, solid background */}
-        <CardHeader ref={cardHeaderRef} className="sticky top-0 bg-card z-20 pt-[calc(2rem+2rem)] pb-0"> {/* Adjusted top to 0, added padding-top */}
+      <Card className="w-full max-w-4xl mx-auto shadow-lg mt-0">
+        <CardHeader ref={cardHeaderRef} className="sticky top-0 bg-card z-20 pb-0">
           <CardTitle className="text-center">
             {userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinario' ?
               (currentFreezerName ? `Inventario del Congelador: ${currentFreezerName}` : 'Inventario de los Congeladores')
@@ -301,20 +295,18 @@ const InventoryPage: React.FC = () => {
             variant="ghost"
             size="icon"
             onClick={() => navigate('/app')}
-            className="absolute top-[calc(2rem+2rem-0.5rem)] right-2 h-8 w-8" {/* Adjusted top for button */}
+            className="absolute top-2 right-2 h-8 w-8"
           >
             <ArrowLeft className="h-5 w-5" />
             <span className="sr-only">Volver</span>
           </Button>
         </CardHeader>
 
-        {/* CardContent: Contains the scrollable table */}
-        <CardContent className="p-0 overflow-x-auto"> {/* Only horizontal scroll here */}
+        <CardContent className="p-0 overflow-x-auto">
           {inventoryItems.length === 0 ? (
             <p className="text-center text-gray-500 p-4">No hay elementos en el inventario de este congelador.</p>
           ) : (
             <Table>
-              {/* TableHeader: Sticky within the main scroll context */}
               <TableHeader className="sticky bg-card z-10" style={{ top: `${tableHeaderStickyTop}px` }}>
                 <TableRow>
                   {showFreezerColumn && <TableHead className="w-[120px]">Congelador</TableHead>}
