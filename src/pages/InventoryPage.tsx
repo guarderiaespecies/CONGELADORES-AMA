@@ -87,10 +87,11 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
       console.log("DEBUG: InventoryPage - No specific freezer filter applied based on role/current_freezer_id.");
     }
 
-    // Order by freezer name ascending, then by entry date descending (most recent first)
+    // Order by freezer name ascending, then by entry date descending (most recent first), then by creation timestamp descending
     query = query
       .order('name', { ascending: true, foreignTable: 'freezers' }) 
-      .order('entry_date', { ascending: false });
+      .order('entry_date', { ascending: false })
+      .order('created_at', { ascending: false }); // Added for stable ordering
 
     const { data, error } = await query;
 
@@ -358,24 +359,26 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
 
         <CardContent className="p-0 overflow-x-auto pt-4">
           {canEditStatus && (
-            <div className="flex justify-center space-x-4 mb-4 px-4">
-              <Button
-                onClick={() => handleBulkStatusChange('solicitado', true)}
-                className="bg-green-600 hover:bg-green-700 text-white"
-                disabled={selectedItemIds.size === 0 || loading}
-              >
-                Solicitar ({selectedItemIds.size})
-              </Button>
-              <Button
-                onClick={() => handleBulkStatusChange('desfasado', true)}
-                className="bg-red-600 hover:bg-red-700 text-white"
-                disabled={selectedItemIds.size === 0 || loading}
-              >
-                Desfasado ({selectedItemIds.size})
-              </Button>
+            <div className="flex justify-center mb-4 px-4 relative"> {/* Parent div for centering and positioning */}
+              <div className="flex space-x-4"> {/* This div will contain the centered buttons */}
+                <Button
+                  onClick={() => handleBulkStatusChange('solicitado', true)}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  disabled={selectedItemIds.size === 0 || loading}
+                >
+                  Solicitar ({selectedItemIds.size})
+                </Button>
+                <Button
+                  onClick={() => handleBulkStatusChange('desfasado', true)}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  disabled={selectedItemIds.size === 0 || loading}
+                >
+                  Desfasado ({selectedItemIds.size})
+                </Button>
+              </div>
               <Button
                 onClick={() => handleBulkStatusChange('clear', false)}
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 h-8 px-3 text-sm"
+                className="absolute right-4 bg-gray-300 hover:bg-gray-400 text-gray-800 h-8 px-3 text-sm"
                 disabled={selectedItemIds.size === 0 || loading}
               >
                 Desmarcar ({selectedItemIds.size})
