@@ -14,6 +14,14 @@ import { es } from 'date-fns/locale';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 
 interface InventoryItem {
   id: string;
@@ -28,6 +36,11 @@ interface InventoryItem {
   status_desfasado: boolean;
 }
 
+interface Freezer {
+  id: string;
+  name: string;
+}
+
 const EditItemPage: React.FC = () => {
   const { id: itemIdParam } = useParams<{ id: string }>(); // Get item ID from URL
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
@@ -36,11 +49,15 @@ const EditItemPage: React.FC = () => {
     sealNo: '',
     species: '',
     observations: '',
+    freezerId: '', // New field
+    statusSolicitado: false, // New field
+    statusDesfasado: false, // New field
   });
+  const [freezers, setFreezers] = useState<Freezer[]>([]); // For freezer selection
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [user, setUser] = useState<any>(null);
-  const [userRole, setUserRole] = useState<string | null>(null); // To check if admin can edit
+  const [userRole, setUserRole] = useState<string | null>(null); // To check if admin/veterinario can edit
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -67,6 +84,9 @@ const EditItemPage: React.FC = () => {
         sealNo: data.seal_no || '',
         species: data.species,
         observations: data.observations || '',
+        freezerId: data.freezer_id, // Initialize new field
+        statusSolicitado: data.status_solicitado, // Initialize new field
+        statusDesfasado: data.status_desfasado, // Initialize new field
       });
     }
     setLoading(false);
@@ -92,7 +112,7 @@ const EditItemPage: React.FC = () => {
 
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('role') // Fetch role to check admin permissions
+        .select('role') // Fetch role to check admin/veterinario permissions
         .eq('id', sessionUser.id)
         .single();
 
@@ -103,6 +123,16 @@ const EditItemPage: React.FC = () => {
         return;
       }
       setUserRole(profileData?.role || null);
+
+      // Fetch all freezers for the select dropdown
+      const { data: freezersData, error: freezersError } = await supabase
+        .from('freezers')
+        .select('id, name');
+      if (freezersError) {
+        toast({ title: "Error", description: "No se pudieron cargar los congeladores.", variant: "destructive" });
+      } else {
+        setFreezers(freezersData || []);
+      }
 
       if (itemIdParam) {
         await fetchItem(itemIdParam);
@@ -142,6 +172,18 @@ const EditItemPage: React.FC = () => {
     setFormData(prev => ({ ...prev, entryDate: date || new Date() }));
   };
 
+  const handleFreezerChange = (value: string) => {
+    setFormData(prev => ({ ...prev, freezerId: value }));
+  };
+
+  const handleStatusSolicitadoChange = (checked: boolean) => {
+    setFormData(prev => ({ ...prev, statusSolicitado: checked }));
+  };
+
+  const handleStatusDesfasadoChange = (checked: boolean) => {
+    setFormData(prev => ({ ...prev, statusDesfasado: checked }));
+  };
+
   const handleUpdateItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingItem) return;
@@ -161,14 +203,25 @@ const EditItemPage: React.FC = () => {
 
     setSaving(true);
     try {
+      const updatePayload: Partial<InventoryItem> = {
+        entry_date: formData.entryDate.toISOString().split('T')[0],
+        seal_no: formData.sealNo || null,
+        species: formData.species.trim(),
+        observations: formData.observations || null,
+      };
+
+      if (userRole === 'Administrator') {
+        updatePayload.freezer_id = formData.freezerId;
+        updatePayload.status_solicitado = formData.statusSolicitado;
+        updatePayload.status_desfasado = formData.statusDesfasado;
+      } else if (userRole === 'Veterinario') {
+        updatePayload.status_solicitado = formData.statusSolicitado;
+        updatePayload.status_desfasado = formData.statusDesfasado;
+      }
+
       const { error } = await supabase
         .from('inventory')
-        .update({
-          entry_date: formData.entryDate.toISOString().split('T')[0],
-          seal_no: formData.sealNo || null,
-          species: formData.species.trim(),
-          observations: formData.observations || null,
-        })
+        .update(updatePayload)
         .eq('id', editingItem.id);
 
       if (error) {
@@ -208,14 +261,14 @@ const EditItemPage: React.FC = () => {
     );
   }
 
-  // If not an administrator, and trying to access this page directly, redirect
-  if (userRole !== 'Administrator') {
+  // If not an administrator or veterinarian, redirect
+  if (userRole !== 'Administrator' && userRole !== 'Veterinario') {
     toast({
       title: "Acceso Denegado",
-      description: "Solo los administradores pueden modificar elementos del inventario.",
+      description: "Solo los administradores y veterinarios pueden modificar elementos del inventario.",
       variant: "destructive",
     });
-    navigate('/inventory'); // Redirect non-admins to the view-only inventory page
+    navigate('/inventory'); // Redirect non-admins/vets to the view-only inventory page
     return null; // Render nothing while redirecting
   }
 
@@ -244,6 +297,44 @@ const EditItemPage: React.FC = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleUpdateItem} className="space-y-4">
+            {userRole === 'Administrator' && (
+              <div>
+                <Label htmlFor="freezerId">Congelador</Label>
+                <Select value={formData.freezerId} onValueChange={handleFreezerChange}>
+                  <SelectTrigger id="freezerId">
+                    <SelectValue placeholder="Selecciona un congelador" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {freezers.map((freezer) => (
+                      <SelectItem key={freezer.id} value={freezer.id}>
+                        {freezer.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between space-x-2">
+              <Label htmlFor="statusSolicitado">Solicitado</Label>
+              <Switch
+                id="statusSolicitado"
+                checked={formData.statusSolicitado}
+                onCheckedChange={handleStatusSolicitadoChange}
+                disabled={userRole !== 'Administrator' && userRole !== 'Veterinario'}
+              />
+            </div>
+
+            <div className="flex items-center justify-between space-x-2">
+              <Label htmlFor="statusDesfasado">Desfasado</Label>
+              <Switch
+                id="statusDesfasado"
+                checked={formData.statusDesfasado}
+                onCheckedChange={handleStatusDesfasadoChange}
+                disabled={userRole !== 'Administrator' && userRole !== 'Veterinario'}
+              />
+            </div>
+
             <div>
               <Label htmlFor="entryDate">FECHA</Label>
               <Popover>

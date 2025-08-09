@@ -29,6 +29,7 @@ interface InventoryItem {
   status_solicitado: boolean;
   status_desfasado: boolean;
   freezer_name?: string; // Optional for when fetching all freezers
+  created_by_user_email?: string; // Added for user email
 }
 
 interface UserProfile {
@@ -56,7 +57,8 @@ const InventoryPage: React.FC = () => {
       created_at,
       status_solicitado,
       status_desfasado,
-      freezers ( name )
+      freezers ( name ),
+      profiles ( email )
     `);
 
     if (profile.role === 'User' && profile.current_freezer_id) {
@@ -79,12 +81,13 @@ const InventoryPage: React.FC = () => {
       });
       setInventoryItems([]);
     } else {
-      // Map data to include freezer_name directly
-      const itemsWithFreezerName = data.map(item => ({
+      // Map data to include freezer_name and created_by_user_email directly
+      const itemsWithFreezerAndUserName = data.map(item => ({
         ...item,
-        freezer_name: item.freezers?.name || 'Desconocido'
+        freezer_name: item.freezers?.name || 'Desconocido',
+        created_by_user_email: item.profiles?.email || 'Desconocido'
       }));
-      setInventoryItems(itemsWithFreezerName as InventoryItem[]);
+      setInventoryItems(itemsWithFreezerAndUserName as InventoryItem[]);
     }
     setLoading(false);
   }, [toast]);
@@ -172,6 +175,7 @@ const InventoryPage: React.FC = () => {
 
   const showFreezerColumn = (userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinario') && !userProfile?.current_freezer_id;
   const showAdminColumns = userProfile?.role === 'Administrator';
+  const showVeterinarioEdit = userProfile?.role === 'Veterinario';
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
@@ -192,22 +196,22 @@ const InventoryPage: React.FC = () => {
           {inventoryItems.length === 0 ? (
             <p className="text-center text-gray-500 p-4">No hay elementos en el inventario de este congelador.</p>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-h-[calc(100vh-250px)] overflow-y-auto"> {/* Added max-h and overflow-y-auto */}
               <Table>
-                <TableHeader>
+                <TableHeader className="sticky top-0 bg-background z-10"> {/* Sticky header */}
                   <TableRow>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Precinto</TableHead>
-                    <TableHead>Especie</TableHead>
+                    {showFreezerColumn && <TableHead className="w-[120px]">Congelador</TableHead>}
+                    <TableHead className="w-[60px] text-center">Solicitado</TableHead>
+                    <TableHead className="w-[60px] text-center">Desfasado</TableHead>
+                    <TableHead className="w-[100px]">Precinto</TableHead>
+                    <TableHead className="w-[120px]">Especie</TableHead>
+                    <TableHead className="w-[100px]">Fecha</TableHead>
                     <TableHead>Observaciones</TableHead>
-                    <TableHead className="text-center">Solicitado</TableHead>
-                    <TableHead className="text-center">Desfasado</TableHead>
-                    {showFreezerColumn && <TableHead>Congelador</TableHead>}
                     {showAdminColumns && (
                       <>
-                        <TableHead>Creado Por</TableHead>
-                        <TableHead>Fecha Creación</TableHead>
-                        <TableHead className="text-center">Acciones</TableHead>
+                        <TableHead className="w-[120px]">Creado Por</TableHead>
+                        <TableHead className="w-[150px]">Fecha Creación</TableHead>
+                        <TableHead className="w-[80px] text-center">Acciones</TableHead>
                       </>
                     )}
                   </TableRow>
@@ -215,20 +219,20 @@ const InventoryPage: React.FC = () => {
                 <TableBody>
                   {inventoryItems.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell>{format(new Date(item.entry_date), "dd/MM/yyyy", { locale: es })}</TableCell>
-                      <TableCell>{item.seal_no || '-'}</TableCell>
-                      <TableCell>{item.species}</TableCell>
-                      <TableCell>{item.observations || '-'}</TableCell>
+                      {showFreezerColumn && <TableCell>{item.freezer_name}</TableCell>}
                       <TableCell className="text-center">
                         {item.status_solicitado ? <Check className="h-5 w-5 text-green-500 mx-auto" /> : ''}
                       </TableCell>
                       <TableCell className="text-center">
                         {item.status_desfasado ? <X className="h-5 w-5 text-red-500 mx-auto" /> : ''}
                       </TableCell>
-                      {showFreezerColumn && <TableCell>{item.freezer_name}</TableCell>}
+                      <TableCell>{item.seal_no || '-'}</TableCell>
+                      <TableCell>{item.species}</TableCell>
+                      <TableCell>{format(new Date(item.entry_date), "dd/MM/yyyy", { locale: es })}</TableCell>
+                      <TableCell>{item.observations || '-'}</TableCell>
                       {showAdminColumns && (
                         <>
-                          <TableCell>{item.created_by_user_id}</TableCell> {/* This will show the user ID, not name */}
+                          <TableCell>{item.created_by_user_email}</TableCell>
                           <TableCell>{format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: es })}</TableCell>
                           <TableCell className="text-center">
                             <Button variant="ghost" size="icon" onClick={() => handleEditItem(item.id)}>
@@ -237,6 +241,14 @@ const InventoryPage: React.FC = () => {
                             </Button>
                           </TableCell>
                         </>
+                      )}
+                      {showVeterinarioEdit && !showAdminColumns && ( // Veterinarios solo pueden editar si no son administradores
+                        <TableCell className="text-center">
+                          <Button variant="ghost" size="icon" onClick={() => handleEditItem(item.id)}>
+                            <Edit className="h-4 w-4" />
+                            <span className="sr-only">Editar</span>
+                          </Button>
+                        </TableCell>
                       )}
                     </TableRow>
                   ))}
