@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { ArrowLeft, Check, X, Edit } from "lucide-react"; // Import icons
+import { ArrowLeft, Check, X, Edit } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -16,8 +16,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { es } from 'date-fns/locale';
-import { Switch } from "@/components/ui/switch"; // Import Switch for in-line editing
-import { cn } from "@/lib/utils"; // Import cn for conditional classNames
+import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 
 interface InventoryItem {
   id: string;
@@ -30,8 +30,8 @@ interface InventoryItem {
   created_at: string;
   status_solicitado: boolean;
   status_desfasado: boolean;
-  freezer_name?: string; // Optional for when fetching all freezers
-  created_by_user_email?: string; // Added for user email
+  freezer_name?: string;
+  created_by_user_email?: string;
 }
 
 interface UserProfile {
@@ -46,6 +46,9 @@ const InventoryPage: React.FC = () => {
   const [currentFreezerName, setCurrentFreezerName] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const cardHeaderRef = useRef<HTMLDivElement>(null);
+  const [tableHeaderTopOffset, setTableHeaderTopOffset] = useState(0);
 
   const fetchInventory = useCallback(async (profile: UserProfile) => {
     setLoading(true);
@@ -66,10 +69,8 @@ const InventoryPage: React.FC = () => {
     if (profile.role === 'User' && profile.current_freezer_id) {
       query = query.eq('freezer_id', profile.current_freezer_id);
     } else if ((profile.role === 'Administrator' || profile.role === 'Veterinario') && profile.current_freezer_id) {
-      // Admin/Veterinario with a selected freezer sees only that freezer
       query = query.eq('freezer_id', profile.current_freezer_id);
     }
-    // If Admin/Veterinario and no current_freezer_id, fetch all (no additional filter)
 
     query = query.order('entry_date', { ascending: false });
 
@@ -83,7 +84,6 @@ const InventoryPage: React.FC = () => {
       });
       setInventoryItems([]);
     } else {
-      // Collect all unique user IDs
       const uniqueUserIds = Array.from(new Set(data.map(item => item.created_by_user_id)));
       let userEmailsMap = new Map<string, string>();
 
@@ -95,7 +95,6 @@ const InventoryPage: React.FC = () => {
 
         if (profilesError) {
           console.error("Error fetching user profiles for emails:", profilesError);
-          // Continue without emails if there's an error
         } else {
           profilesData.forEach(profile => {
             userEmailsMap.set(profile.id, profile.email);
@@ -103,7 +102,6 @@ const InventoryPage: React.FC = () => {
         }
       }
 
-      // Map data to include freezer_name and created_by_user_email directly
       const itemsWithFreezerAndUserName = data.map(item => ({
         ...item,
         freezer_name: item.freezers?.name || 'Desconocido',
@@ -163,7 +161,6 @@ const InventoryPage: React.FC = () => {
       };
       setUserProfile(profile);
 
-      // Fetch freezer name for the title
       const name = await fetchFreezerName(profile.current_freezer_id);
       setCurrentFreezerName(name);
 
@@ -196,12 +193,28 @@ const InventoryPage: React.FC = () => {
     };
   }, [navigate, toast, fetchInventory, fetchFreezerName]);
 
+  // Effect to calculate the offset for the table header
+  useEffect(() => {
+    const calculateOffset = () => {
+      if (cardHeaderRef.current) {
+        // Get the bottom position of the CardHeader relative to the viewport
+        const headerBottom = cardHeaderRef.current.getBoundingClientRect().bottom;
+        setTableHeaderTopOffset(headerBottom);
+      }
+    };
+
+    // Recalculate on mount, resize, and when inventory items or loading state changes
+    calculateOffset();
+    window.addEventListener('resize', calculateOffset);
+    return () => window.removeEventListener('resize', calculateOffset);
+  }, [loading, inventoryItems]); // Depend on loading and inventoryItems to recalculate if content changes
+
   const handleEditItem = (itemId: string) => {
     navigate(`/edit-item/${itemId}`);
   };
 
   const handleStatusChange = async (itemId: string, statusKey: 'status_solicitado' | 'status_desfasado', newValue: boolean) => {
-    setLoading(true); // Temporarily set loading to prevent multiple rapid changes
+    setLoading(true);
     try {
       const { error } = await supabase
         .from('inventory')
@@ -219,7 +232,6 @@ const InventoryPage: React.FC = () => {
           title: "Éxito",
           description: "Estado actualizado correctamente.",
         });
-        // Re-fetch inventory to reflect the change
         if (userProfile) {
           await fetchInventory(userProfile);
         }
@@ -236,7 +248,7 @@ const InventoryPage: React.FC = () => {
   };
 
   const getRowClasses = (item: InventoryItem) => {
-    if (item.status_desfasado) { // Red takes precedence
+    if (item.status_desfasado) {
       return "bg-red-100";
     }
     if (item.status_solicitado) {
@@ -247,9 +259,9 @@ const InventoryPage: React.FC = () => {
 
   const getIconColorClass = (item: InventoryItem) => {
     if (item.status_solicitado || item.status_desfasado) {
-      return "text-white"; // White icon if row is highlighted
+      return "text-white";
     }
-    return ""; // Default icon color (from shadcn/ui)
+    return "";
   };
 
   if (loading) {
@@ -271,8 +283,8 @@ const InventoryPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
-      <Card className="w-full max-w-4xl mx-auto mt-8 shadow-lg relative max-h-[calc(100vh-64px)] overflow-y-auto"> {/* Card is now scrollable */}
-        <CardHeader className="sticky top-0 bg-background z-20"> {/* CardHeader is sticky within the Card */}
+      <Card className="w-full max-w-4xl mx-auto mt-8 shadow-lg"> {/* No overflow-y-auto here, body will scroll */}
+        <CardHeader ref={cardHeaderRef} className="sticky top-[48px] bg-background z-20"> {/* Sticks to viewport at 48px */}
           <CardTitle className="text-center">
             {userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinario' ?
               (currentFreezerName ? `Inventario del Congelador: ${currentFreezerName}` : 'Inventario de los Congeladores')
@@ -290,12 +302,13 @@ const InventoryPage: React.FC = () => {
             <span className="sr-only">Volver</span>
           </Button>
         </CardHeader>
-        <CardContent className="overflow-x-auto"> {/* CardContent only needs horizontal scroll */}
+        <CardContent className="overflow-x-auto"> {/* Only horizontal scroll here */}
           {inventoryItems.length === 0 ? (
             <p className="text-center text-gray-500 p-4">No hay elementos en el inventario de este congelador.</p>
           ) : (
             <Table>
-              <TableHeader className="sticky top-0 bg-background z-10"> {/* TableHeader is sticky within CardContent */}
+              {/* Use the dynamically calculated offset for TableHeader */}
+              <TableHeader className="sticky bg-background z-10" style={{ top: `${tableHeaderTopOffset}px` }}>
                 <TableRow>
                   {showFreezerColumn && <TableHead className="w-[120px]">Congelador</TableHead>}
                   <TableHead className="w-[100px]">Precinto</TableHead>
