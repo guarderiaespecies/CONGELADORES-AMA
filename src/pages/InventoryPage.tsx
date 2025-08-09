@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } => {
 import { format } from "date-fns";
 import { es } from 'date-fns/locale';
 import { Switch } from "@/components/ui/switch";
@@ -47,8 +47,8 @@ const InventoryPage: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const cardHeaderRef = useRef<HTMLDivElement>(null);
-  const [tableHeaderStickyTop, setTableHeaderStickyTop] = useState(0);
+  // No longer needed for sticky table header
+  const cardHeaderRef = useRef<HTMLDivElement>(null); 
 
   const fetchInventory = useCallback(async (profile: UserProfile) => {
     setLoading(true);
@@ -164,7 +164,7 @@ const InventoryPage: React.FC = () => {
       const name = await fetchFreezerName(profile.current_freezer_id);
       setCurrentFreezerName(name);
 
-      if (profile.role === 'User' && !profile.current_freezer_id) {
+      if (profile.role === 'User' && !profile.current_freeizer_id) {
         toast({
           title: "Atención",
           description: "No tienes un congelador seleccionado. Por favor, selecciona uno para ver el inventario.",
@@ -193,20 +193,7 @@ const InventoryPage: React.FC = () => {
     };
   }, [navigate, toast, fetchInventory, fetchFreezerName]);
 
-  useEffect(() => {
-    const updateStickyPositions = () => {
-      if (cardHeaderRef.current) {
-        setTableHeaderStickyTop(cardHeaderRef.current.offsetHeight);
-      }
-    };
-
-    updateStickyPositions();
-    window.addEventListener('resize', updateStickyPositions);
-
-    return () => {
-      window.removeEventListener('resize', updateStickyPositions);
-    };
-  }, [loading, inventoryItems]);
+  // Removed useEffect for tableHeaderStickyTop as it's no longer needed
 
   const handleEditItem = (itemId: string) => {
     navigate(`/edit-item/${itemId}`);
@@ -282,8 +269,8 @@ const InventoryPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
-      <Card className="w-full max-w-4xl mx-auto shadow-lg mt-0">
-        <CardHeader ref={cardHeaderRef} className="sticky top-0 bg-card z-20 pb-0">
+      <Card className="w-full max-w-4xl mx-auto mt-8 shadow-lg"> {/* Reverted mt-0 to mt-8 */}
+        <CardHeader ref={cardHeaderRef} className="sticky top-0 bg-card z-20 pb-0"> {/* Reverted padding-top */}
           <CardTitle className="text-center">
             {userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinario' ?
               (currentFreezerName ? `Inventario del Congelador: ${currentFreezerName}` : 'Inventario de los Congeladores')
@@ -295,7 +282,7 @@ const InventoryPage: React.FC = () => {
             variant="ghost"
             size="icon"
             onClick={() => navigate('/app')}
-            className="absolute top-2 right-2 h-8 w-8"
+            className="absolute top-2 right-2 h-8 w-8" {/* Reverted top for button */}
           >
             <ArrowLeft className="h-5 w-5" />
             <span className="sr-only">Volver</span>
@@ -307,7 +294,7 @@ const InventoryPage: React.FC = () => {
             <p className="text-center text-gray-500 p-4">No hay elementos en el inventario de este congelador.</p>
           ) : (
             <Table>
-              <TableHeader className="sticky bg-card z-10" style={{ top: `${tableHeaderStickyTop}px` }}>
+              <TableHeader className="bg-card z-10"> {/* Removed sticky and style={{ top }} */}
                 <TableRow>
                   {showFreezerColumn && <TableHead className="w-[120px]">Congelador</TableHead>}
                   <TableHead className="w-[100px]">Precinto</TableHead>
