@@ -39,10 +39,15 @@ interface UserProfile {
   current_freezer_id: string | null;
 }
 
-const InventoryPage: React.FC = () => {
+interface InventoryPageProps {
+  hideHeader?: boolean; // New prop to hide the CardHeader
+  initialUserProfile?: UserProfile; // New prop to pass user profile from parent
+}
+
+const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initialUserProfile }) => {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(initialUserProfile || null); // Initialize with prop
   const [currentFreezerName, setCurrentFreezerName] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -72,7 +77,7 @@ const InventoryPage: React.FC = () => {
       console.log("DEBUG: InventoryPage - Filtering by user's current freezer:", profile.current_freezer_id);
     } else if (profile.role === 'Administrator' && profile.current_freezer_id) {
       // If Admin has a specific freezer selected, show only that one
-      query = query.eq('freezer_id', profile.current_freezer_id);
+      query = query.eq('freezer_id', profile.current_freeizer_id);
       console.log("DEBUG: InventoryPage - Filtering by admin's current freezer:", profile.current_freezer_id);
     } else if (profile.role === 'Veterinary' || (profile.role === 'Administrator' && !profile.current_freezer_id)) {
       // Veterinarians always see all, and Administrators see all if no freezer is selected
@@ -139,45 +144,49 @@ const InventoryPage: React.FC = () => {
   useEffect(() => {
     const checkUserAndLoadData = async () => {
       setLoading(true);
-      const { data: { user: sessionUser } } = await supabase.auth.getUser();
+      let currentProfile: UserProfile | null = initialUserProfile || null; // Use the prop if available
 
-      if (!sessionUser) {
-        toast({
-          title: "Error",
-          description: "No se pudo obtener la información del usuario. Por favor, inicia sesión de nuevo.",
-          variant: "destructive",
-        });
-        navigate('/');
-        setLoading(false);
-        return;
+      if (!currentProfile) { // If prop not provided, fetch it
+        const { data: { user: sessionUser } } = await supabase.auth.getUser();
+
+        if (!sessionUser) {
+          toast({
+            title: "Error",
+            description: "No se pudo obtener la información del usuario. Por favor, inicia sesión de nuevo.",
+            variant: "destructive",
+          });
+          navigate('/');
+          setLoading(false);
+          return;
+        }
+
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('role, current_freezer_id')
+          .eq('id', sessionUser.id)
+          .single();
+
+        if (profileError && profileError.code !== 'PGRST116') {
+          toast({ title: "Error", description: "No se pudo obtener el perfil del usuario.", variant: "destructive" });
+          navigate('/app');
+          setLoading(false);
+          return;
+        }
+        currentProfile = {
+          role: profileData?.role || null,
+          current_freezer_id: profileData?.current_freezer_id || null,
+        };
       }
+      
+      setUserProfile(currentProfile); // Update state with the determined profile
 
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('role, current_freezer_id')
-        .eq('id', sessionUser.id)
-        .single();
+      console.log("DEBUG: InventoryPage - User Profile Role:", currentProfile?.role);
+      console.log("DEBUG: InventoryPage - User Profile Current Freezer ID:", currentProfile?.current_freezer_id);
 
-      if (profileError && profileError.code !== 'PGRST116') {
-        toast({ title: "Error", description: "No se pudo obtener el perfil del usuario.", variant: "destructive" });
-        navigate('/app');
-        setLoading(false);
-        return;
-      }
-
-      const profile: UserProfile = {
-        role: profileData?.role || null,
-        current_freezer_id: profileData?.current_freezer_id || null,
-      };
-      setUserProfile(profile);
-
-      console.log("DEBUG: InventoryPage - User Profile Role:", profile.role);
-      console.log("DEBUG: InventoryPage - User Profile Current Freezer ID:", profile.current_freezer_id);
-
-      const name = await fetchFreezerName(profile.current_freezer_id);
+      const name = await fetchFreezerName(currentProfile?.current_freezer_id || null);
       setCurrentFreezerName(name);
 
-      if (profile.role === 'User' && !profile.current_freezer_id) {
+      if (currentProfile?.role === 'User' && !currentProfile?.current_freezer_id) {
         toast({
           title: "Atención",
           description: "No tienes un congelador seleccionado. Por favor, selecciona uno para ver el inventario.",
@@ -188,7 +197,11 @@ const InventoryPage: React.FC = () => {
         return;
       }
 
-      fetchInventory(profile);
+      if (currentProfile) {
+        fetchInventory(currentProfile);
+      } else {
+        setLoading(false);
+      }
     };
 
     checkUserAndLoadData();
@@ -197,6 +210,7 @@ const InventoryPage: React.FC = () => {
       if (!session) {
         navigate('/');
       } else {
+        // Re-run checkUserAndLoadData to get the latest profile based on new session
         checkUserAndLoadData();
       }
     });
@@ -204,7 +218,7 @@ const InventoryPage: React.FC = () => {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [navigate, toast, fetchInventory, fetchFreezerName]);
+  }, [navigate, toast, fetchInventory, fetchFreezerName, initialUserProfile]);
 
   const handleEditItem = (itemId: string) => {
     navigate(`/edit-item/${itemId}`);
@@ -282,27 +296,29 @@ const InventoryPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
-      <Card className="w-full max-w-full mx-auto mt-8 shadow-lg">
-        <CardHeader ref={cardHeaderRef} className="sticky top-0 bg-card z-20 pb-4"> {/* Added pb-4 */}
-          <CardTitle className="text-center">
-            {userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary' ?
-              (currentFreezerName ? `Inventario del Congelador: ${currentFreezerName}` : 'Inventario de los Congeladores')
-              :
-              (currentFreezerName ? `Inventario del Congelador: ${currentFreezerName}` : 'Inventario del Congelador')
-            }
-          </CardTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/app')}
-            className="absolute top-2 right-2 h-8 w-8"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span className="sr-only">Volver</span>
-          </Button>
-        </CardHeader>
+      <Card className={cn("w-full max-w-full mx-auto shadow-lg", !hideHeader && "mt-8")}> {/* Conditionally apply mt-8 */}
+        {!hideHeader && ( // Conditionally render CardHeader
+          <CardHeader ref={cardHeaderRef} className="sticky top-0 bg-card z-20 pb-4">
+            <CardTitle className="text-center">
+              {userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary' ?
+                (currentFreezerName ? `Inventario del Congelador: ${currentFreezerName}` : 'Inventario de los Congeladores')
+                :
+                (currentFreezerName ? `Inventario del Congelador: ${currentFreezerName}` : 'Inventario del Congelador')
+              }
+            </CardTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/app')}
+              className="absolute top-2 right-2 h-8 w-8"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              <span className="sr-only">Volver</span>
+            </Button>
+          </CardHeader>
+        )}
 
-        <CardContent className="p-0 overflow-x-auto pt-4"> {/* Added pt-4 */}
+        <CardContent className="p-0 overflow-x-auto pt-4">
           {inventoryItems.length === 0 ? (
             <p className="text-center text-gray-500 p-4">No hay elementos en el inventario de este congelador.</p>
           ) : (

@@ -5,6 +5,12 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from '@/lib/supabase';
 import { useToast } from "@/components/ui/use-toast";
 import AppHeader from "@/components/AppHeader";
+import InventoryPage from "./InventoryPage"; // Import InventoryPage
+
+interface UserProfile {
+  role: string | null;
+  current_freezer_id: string | null;
+}
 
 const Index = () => {
   const [loading, setLoading] = useState(true);
@@ -12,6 +18,7 @@ const Index = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [currentFreezerId, setCurrentFreezerId] = useState<string | null>(null);
   const [currentFreezerName, setCurrentFreezerName] = useState<string | null>(null);
+  const [userProfileState, setUserProfileState] = useState<UserProfile | null>(null); // State for userProfile to pass to InventoryPage
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -70,6 +77,9 @@ const Index = () => {
     const name = await fetchFreezerName(freezerId);
     setCurrentFreezerName(name);
 
+    // Set the userProfileState here to pass to InventoryPage
+    setUserProfileState({ role, current_freezer_id: freezerId });
+
     setLoading(false);
   }, [navigate, toast, fetchUserProfile, fetchFreezerName]);
 
@@ -98,8 +108,24 @@ const Index = () => {
     );
   }
 
-  const showActionButtons = userRole === 'User' || userRole === 'Administrator';
+  // If user is Veterinary, show the InventoryPage directly
+  if (userRole === 'Veterinary') {
+    return (
+      <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
+        <AppHeader
+          userEmail={user?.email}
+          userRole={userRole}
+          currentFreezerName={currentFreezerName}
+        />
+        {userProfileState && ( // Ensure userProfileState is available before rendering InventoryPage
+          <InventoryPage hideHeader={true} initialUserProfile={userProfileState} />
+        )}
+        <MadeWithDyad />
+      </div>
+    );
+  }
 
+  // For 'User' and 'Administrator', render existing buttons
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
       <AppHeader
@@ -108,38 +134,35 @@ const Index = () => {
         currentFreezerName={currentFreezerName}
       />
 
-      {/* Botones de Acción - Condicionalmente mostrados */}
-      {showActionButtons && (
-        <div className="grid grid-cols-2 gap-4 w-full max-w-md mb-8">
-          <Button
-            variant="outline"
-            className="h-12"
-            onClick={() => navigate('/edit-item')}
-          >
-            Modificar
+      <div className="grid grid-cols-2 gap-4 w-full max-w-md mb-8">
+        <Button
+          variant="outline"
+          className="h-12"
+          onClick={() => navigate('/edit-item')}
+        >
+          Modificar
+        </Button>
+        {(userRole === 'User' || userRole === 'Administrator') && (
+          <Button variant="outline" className="h-12" onClick={() => navigate('/change-freezer')}>
+            Cambiar Congelador
           </Button>
-          {(userRole === 'User' || userRole === 'Administrator') && (
-            <Button variant="outline" className="h-12" onClick={() => navigate('/change-freezer')}>
-              Cambiar Congelador
-            </Button>
-          )}
-          <Button variant="outline" className="col-span-2 h-12" onClick={() => navigate('/inventory')}>
-            Inventario
-          </Button>
-          <Button
-            className="bg-green-600 hover:bg-green-700 text-white text-lg py-6 h-auto"
-            onClick={() => navigate('/add-item')}
-          >
-            AÑADIR
-          </Button>
-          <Button
-            className="bg-red-600 hover:bg-red-700 text-white text-lg py-6 h-auto"
-            onClick={() => navigate('/remove-item')}
-          >
-            RETIRAR
-          </Button>
-        </div>
-      )}
+        )}
+        <Button variant="outline" className="col-span-2 h-12" onClick={() => navigate('/inventory')}>
+          Inventario
+        </Button>
+        <Button
+          className="bg-green-600 hover:bg-green-700 text-white text-lg py-6 h-auto"
+          onClick={() => navigate('/add-item')}
+        >
+          AÑADIR
+        </Button>
+        <Button
+          className="bg-red-600 hover:bg-red-700 text-white text-lg py-6 h-auto"
+          onClick={() => navigate('/remove-item')}
+        >
+          RETIRAR
+        </Button>
+      </div>
 
       <MadeWithDyad />
     </div>
