@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { supabase } from '@/lib/supabase';
 import { useToast } from "@/components/ui/use-toast";
-import { X } from 'lucide-react'; // Importar el icono X
+import { X, Settings } from 'lucide-react'; // Importar los iconos X y Settings
 
 interface AppHeaderProps {
   userEmail: string | undefined;
@@ -15,9 +15,6 @@ interface AppHeaderProps {
 const AppHeader: React.FC<AppHeaderProps> = ({ userEmail, userRole, currentFreezerName }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  // DEBUG: Log the userRole prop
-  console.log("DEBUG: AppHeader - Received userRole:", userRole);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -30,8 +27,12 @@ const AppHeader: React.FC<AppHeaderProps> = ({ userEmail, userRole, currentFreez
     }
   };
 
+  const handleAdminSettings = () => {
+    navigate('/admin-settings');
+  };
+
   return (
-    <Card className="w-full max-w-md mx-auto mb-8 shadow-lg relative"> {/* Añadir 'relative' para posicionamiento absoluto */}
+    <Card className="w-full max-w-md mx-auto mb-8 shadow-lg relative">
       <CardHeader>
         <img src="/logotipo-azul.png" alt="Logo Principado de Asturias" className="mx-auto mb-4 h-20" />
         <CardTitle className="text-center text-xl font-normal">
@@ -42,7 +43,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ userEmail, userRole, currentFreez
       </CardHeader>
       <CardContent className="text-center">
         <p className="text-lg font-semibold text-gray-800">{userEmail}</p>
-        {userRole && (userRole === 'Administrator' || userRole === 'Veterinary') && ( // Cambiado 'Veterinario' a 'Veterinary'
+        {userRole && (userRole === 'Administrator' || userRole === 'Veterinary') && (
           <p className="text-md text-gray-600">Rol: <span className="font-medium">{userRole}</span></p>
         )}
         {currentFreezerName && (
@@ -57,11 +58,23 @@ const AppHeader: React.FC<AppHeaderProps> = ({ userEmail, userRole, currentFreez
         variant="ghost"
         size="icon"
         onClick={handleLogout}
-        className="absolute top-2 right-2 h-8 w-8" // Posicionamiento y tamaño
+        className="absolute top-2 right-2 h-8 w-8"
       >
-        <X className="h-5 w-5 font-bold" /> {/* Icono X en negrita */}
+        <X className="h-5 w-5 font-bold" />
         <span className="sr-only">Cerrar Sesión</span>
       </Button>
+      {/* Botón de configuración para administradores */}
+      {userRole === 'Administrator' && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleAdminSettings}
+          className="absolute top-2 right-12 h-8 w-8" // Posicionado a la izquierda del botón de cerrar sesión
+        >
+          <Settings className="h-5 w-5" />
+          <span className="sr-only">Configuración de Administrador</span>
+        </Button>
+      )}
     </Card>
   );
 };

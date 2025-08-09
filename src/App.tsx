@@ -10,7 +10,10 @@ import ChangeFreezerPage from "./pages/ChangeFreezerPage";
 import AddItemPage from "./pages/AddItemPage";
 import RemoveItemPage from "./pages/RemoveItemPage";
 import EditItemPage from "./pages/EditItemPage";
-import InventoryPage from "./pages/InventoryPage"; // Import the new page
+import InventoryPage from "./pages/InventoryPage";
+import AdminSettingsPage from "./pages/AdminSettingsPage"; // Import new admin settings page
+import FreezersPage from "./pages/admin/FreezersPage"; // Import new freezers page
+import ProfilesPage from "./pages/admin/ProfilesPage"; // Import new profiles page
 
 const queryClient = new QueryClient();
 
@@ -26,8 +29,11 @@ const App = () => (
           <Route path="/change-freezer" element={<ChangeFreezerPage />} />
           <Route path="/add-item" element={<AddItemPage />} />
           <Route path="/remove-item" element={<RemoveItemPage />} />
-          <Route path="/edit-item/:id" element={<EditItemPage />} /> {/* Modified route to accept ID */}
-          <Route path="/inventory" element={<InventoryPage />} /> {/* New route for Inventory page */}
+          <Route path="/edit-item/:id" element={<EditItemPage />} />
+          <Route path="/inventory" element={<InventoryPage />} />
+          <Route path="/admin-settings" element={<AdminSettingsPage />} /> {/* New route */}
+          <Route path="/admin/freezers" element={<FreezersPage />} /> {/* New route */}
+          <Route path="/admin/profiles" element={<ProfilesPage />} /> {/* New route */}
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
