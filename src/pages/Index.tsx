@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from '@/lib/supabase';
 import { useToast } from "@/components/ui/use-toast";
 import AppHeader from "@/components/AppHeader";
-import InventoryPage from "./InventoryPage"; // Import InventoryPage
+import InventoryPage from "./InventoryPage";
 
 interface UserProfile {
   role: string | null;
@@ -18,7 +18,7 @@ const Index = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [currentFreezerId, setCurrentFreezerId] = useState<string | null>(null);
   const [currentFreezerName, setCurrentFreezerName] = useState<string | null>(null);
-  const [userProfileState, setUserProfileState] = useState<UserProfile | null>(null); // State for userProfile to pass to InventoryPage
+  const [userProfileState, setUserProfileState] = useState<UserProfile | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -78,7 +78,7 @@ const Index = () => {
     setCurrentFreezerName(name);
 
     // Set the userProfileState here to pass to InventoryPage
-    setUserProfileState({ role, current_freezer_id: freezerId });
+    setUserProfileState({ role, current_freeizer_id: freezerId });
 
     setLoading(false);
   }, [navigate, toast, fetchUserProfile, fetchFreezerName]);
@@ -138,7 +138,7 @@ const Index = () => {
         <Button
           variant="outline"
           className="h-12"
-          onClick={() => navigate('/inventory')} {/* Changed navigation to /inventory */}
+          onClick={() => navigate('/inventory')}
         >
           Modificar
         </Button>
