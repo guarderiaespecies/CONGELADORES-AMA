@@ -9,7 +9,8 @@ import AuthPage from "./pages/AuthPage";
 import ChangeFreezerPage from "./pages/ChangeFreezerPage";
 import AddItemPage from "./pages/AddItemPage";
 import RemoveItemPage from "./pages/RemoveItemPage";
-import EditItemPage from "./pages/EditItemPage"; // Import the new page
+import EditItemPage from "./pages/EditItemPage";
+import InventoryPage from "./pages/InventoryPage"; // Import the new page
 
 const queryClient = new QueryClient();
 
@@ -25,7 +26,8 @@ const App = () => (
           <Route path="/change-freezer" element={<ChangeFreezerPage />} />
           <Route path="/add-item" element={<AddItemPage />} />
           <Route path="/remove-item" element={<RemoveItemPage />} />
-          <Route path="/edit-item" element={<EditItemPage />} /> {/* New route for editing items */}
+          <Route path="/edit-item/:id" element={<EditItemPage />} /> {/* Modified route to accept ID */}
+          <Route path="/inventory" element={<InventoryPage />} /> {/* New route for Inventory page */}
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

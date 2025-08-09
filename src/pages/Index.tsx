@@ -12,7 +12,6 @@ const Index = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [currentFreezerId, setCurrentFreezerId] = useState<string | null>(null);
   const [currentFreezerName, setCurrentFreezerName] = useState<string | null>(null);
-  // Eliminado: const [hasMadeChanges, setHasMadeChanges] = useState<boolean>(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -71,10 +70,6 @@ const Index = () => {
     const name = await fetchFreezerName(freezerId);
     setCurrentFreezerName(name);
 
-    // Eliminado: Cargar el estado de cambios desde sessionStorage
-    // Eliminado: const changesMade = sessionStorage.getItem('hasMadeChanges') === 'true';
-    // Eliminado: setHasMadeChanges(changesMade);
-
     setLoading(false);
   }, [navigate, toast, fetchUserProfile, fetchFreezerName]);
 
@@ -117,7 +112,6 @@ const Index = () => {
           variant="outline"
           className="h-12"
           onClick={() => navigate('/edit-item')}
-          // Eliminado: disabled={!hasMadeChanges}
         >
           Modificar
         </Button>
@@ -126,7 +120,9 @@ const Index = () => {
             Cambiar Congelador
           </Button>
         )}
-        <Button variant="outline" className="col-span-2 h-12">Ver Inventario</Button>
+        <Button variant="outline" className="col-span-2 h-12" onClick={() => navigate('/inventory')}> {/* Updated button text and navigation */}
+          Inventario
+        </Button>
         <Button
           className="bg-green-600 hover:bg-green-700 text-white text-lg py-6 h-auto"
           onClick={() => navigate('/add-item')}
