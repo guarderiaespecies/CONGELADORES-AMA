@@ -138,7 +138,7 @@ const Index = () => {
         <Button
           variant="outline"
           className="h-12"
-          onClick={() => navigate('/edit-item')}
+          onClick={() => navigate('/inventory')} {/* Changed navigation to /inventory */}
         >
           Modificar
         </Button>
