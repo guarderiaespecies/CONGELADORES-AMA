@@ -330,8 +330,9 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
 
   // Determine if the "Congelador" column should be shown
   const showFreezerColumn = (userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary') && !userProfile?.current_freezer_id;
-  const showAdminColumns = userProfile?.role === 'Administrator';
-  const canEditStatus = userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary';
+  const showAdminOnlyColumns = userProfile?.role === 'Administrator'; // For 'Creado Por' and 'Fecha Creación'
+  const canEditItem = userProfile?.role === 'Administrator' || userProfile?.role === 'User'; // For the edit button
+  const canEditStatus = userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary'; // For bulk status change buttons
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
@@ -397,13 +398,13 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
                   <TableHead className="w-[100px]">Precinto</TableHead>
                   <TableHead className="w-[120px]">Especie</TableHead>
                   <TableHead className="min-w-[150px]">Observaciones</TableHead>
-                  {showAdminColumns && (
+                  {showAdminOnlyColumns && (
                     <>
                       <TableHead className="w-[120px]">Creado Por</TableHead>
                       <TableHead className="w-[150px]">Fecha Creación</TableHead>
-                      <TableHead className="w-[80px] text-center">Acciones</TableHead>
                     </>
                   )}
+                  {canEditItem && <TableHead className="w-[80px] text-center">Acciones</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -418,19 +419,19 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
                     <TableCell className="w-[100px]">{item.seal_no || '-'}</TableCell>
                     <TableCell className="w-[120px]">{item.species}</TableCell>
                     <TableCell className="min-w-[150px]">{item.observations || '-'}</TableCell>
-                    {showAdminColumns ? (
+                    {showAdminOnlyColumns && (
                       <>
                         <TableCell className="w-[120px]">{item.created_by_user_email}</TableCell>
                         <TableCell className="w-[150px]">{format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: es })}</TableCell>
-                        <TableCell className="w-[80px] text-center">
-                          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEditItem(item.id); }}>
-                            <Edit className="h-4 w-4" />
-                            <span className="sr-only">Editar</span>
-                          </Button>
-                        </TableCell>
                       </>
-                    ) : (
-                      null
+                    )}
+                    {canEditItem && (
+                      <TableCell className="w-[80px] text-center">
+                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEditItem(item.id); }}>
+                          <Edit className="h-4 w-4" />
+                          <span className="sr-only">Editar</span>
+                        </Button>
+                      </TableCell>
                     )}
                   </TableRow>
                 ))}

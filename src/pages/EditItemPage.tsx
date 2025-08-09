@@ -124,14 +124,16 @@ const EditItemPage: React.FC = () => {
       }
       setUserRole(profileData?.role || null);
 
-      // Fetch all freezers for the select dropdown
-      const { data: freezersData, error: freezersError } = await supabase
-        .from('freezers')
-        .select('id, name');
-      if (freezersError) {
-        toast({ title: "Error", description: "No se pudieron cargar los congeladores.", variant: "destructive" });
-      } else {
-        setFreezers(freezersData || []);
+      // Fetch all freezers for the select dropdown (only if admin)
+      if (profileData?.role === 'Administrator') {
+        const { data: freezersData, error: freezersError } = await supabase
+          .from('freezers')
+          .select('id, name');
+        if (freezersError) {
+          toast({ title: "Error", description: "No se pudieron cargar los congeladores.", variant: "destructive" });
+        } else {
+          setFreezers(freezersData || []);
+        }
       }
 
       if (itemIdParam) {
@@ -259,17 +261,6 @@ const EditItemPage: React.FC = () => {
     );
   }
 
-  // If not an administrator, redirect
-  if (userRole !== 'Administrator') {
-    toast({
-      title: "Acceso Denegado",
-      description: "Solo los administradores pueden modificar elementos del inventario.",
-      variant: "destructive",
-    });
-    navigate('/inventory'); // Redirect non-admins to the view-only inventory page
-    return null; // Render nothing while redirecting
-  }
-
   if (!editingItem) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
@@ -295,23 +286,25 @@ const EditItemPage: React.FC = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleUpdateItem} className="space-y-4">
-            {userRole === 'Administrator' && (
-              <div>
-                <Label htmlFor="freezerId">Congelador</Label>
-                <Select value={formData.freezerId} onValueChange={handleFreezerChange}>
-                  <SelectTrigger id="freezerId">
-                    <SelectValue placeholder="Selecciona un congelador" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {freezers.map((freezer) => (
-                      <SelectItem key={freezer.id} value={freezer.id}>
-                        {freezer.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div>
+              <Label htmlFor="freezerId">Congelador</Label>
+              <Select 
+                value={formData.freezerId} 
+                onValueChange={handleFreezerChange}
+                disabled={userRole !== 'Administrator'} // Only Administrator can change
+              >
+                <SelectTrigger id="freezerId">
+                  <SelectValue placeholder="Selecciona un congelador" />
+                </SelectTrigger>
+                <SelectContent>
+                  {freezers.map((freezer) => (
+                    <SelectItem key={freezer.id} value={freezer.id}>
+                      {freezer.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
             <div className="flex items-center justify-between space-x-2">
               <Label htmlFor="statusSolicitado">Solicitado</Label>
@@ -319,8 +312,7 @@ const EditItemPage: React.FC = () => {
                 id="statusSolicitado"
                 checked={formData.statusSolicitado}
                 onCheckedChange={handleStatusSolicitadoChange}
-                // Only Administrator can modify these here, Veterinarians do it in-line
-                disabled={userRole !== 'Administrator'}
+                disabled={userRole !== 'Administrator'} // Only Administrator can modify
               />
             </div>
 
@@ -330,8 +322,7 @@ const EditItemPage: React.FC = () => {
                 id="statusDesfasado"
                 checked={formData.statusDesfasado}
                 onCheckedChange={handleStatusDesfasadoChange}
-                // Only Administrator can modify these here, Veterinarians do it in-line
-                disabled={userRole !== 'Administrator'}
+                disabled={userRole !== 'Administrator'} // Only Administrator can modify
               />
             </div>
 
