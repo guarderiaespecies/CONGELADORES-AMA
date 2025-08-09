@@ -74,9 +74,9 @@ const InventoryPage: React.FC = () => {
       // If Admin has a specific freezer selected, show only that one
       query = query.eq('freezer_id', profile.current_freezer_id);
       console.log("DEBUG: InventoryPage - Filtering by admin's current freezer:", profile.current_freezer_id);
-    } else if (profile.role === 'Veterinario' || (profile.role === 'Administrator' && !profile.current_freezer_id)) {
-      // Veterinarios always see all, and Administrators see all if no freezer is selected
-      console.log("DEBUG: InventoryPage - No freezer filter applied (Admin/Veterinario viewing all).");
+    } else if (profile.role === 'Veterinary' || (profile.role === 'Administrator' && !profile.current_freezer_id)) {
+      // Veterinarians always see all, and Administrators see all if no freezer is selected
+      console.log("DEBUG: InventoryPage - No freezer filter applied (Admin/Veterinary viewing all).");
     } else {
       // Fallback for other roles or unhandled cases, might result in no data if no filter
       console.log("DEBUG: InventoryPage - No specific freezer filter applied based on role/current_freezer_id.");
@@ -275,17 +275,17 @@ const InventoryPage: React.FC = () => {
   }
 
   // Determine if the "Congelador" column should be shown
-  // It should be shown if the user is Admin/Veterinario AND they are NOT currently filtered by a specific freezer.
-  const showFreezerColumn = (userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinario') && !userProfile?.current_freezer_id;
+  // It should be shown if the user is Admin/Veterinary AND they are NOT currently filtered by a specific freezer.
+  const showFreezerColumn = (userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary') && !userProfile?.current_freezer_id;
   const showAdminColumns = userProfile?.role === 'Administrator';
-  const canEditStatus = userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinario';
+  const canEditStatus = userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary';
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
       <Card className="w-full max-w-full mx-auto mt-8 shadow-lg">
         <CardHeader ref={cardHeaderRef} className="sticky top-0 bg-card z-20 pb-4"> {/* Added pb-4 */}
           <CardTitle className="text-center">
-            {userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinario' ?
+            {userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary' ?
               (currentFreezerName ? `Inventario del Congelador: ${currentFreezerName}` : 'Inventario de los Congeladores')
               :
               (currentFreezerName ? `Inventario del Congelador: ${currentFreezerName}` : 'Inventario del Congelador')
@@ -345,7 +345,7 @@ const InventoryPage: React.FC = () => {
                         </TableCell>
                       </>
                     ) : (
-                      // For Veterinario, these cells are empty or not rendered if columns are hidden
+                      // For Veterinary, these cells are empty or not rendered if columns are hidden
                       // No need to render empty cells if the TableHead is not rendered
                       null
                     )}

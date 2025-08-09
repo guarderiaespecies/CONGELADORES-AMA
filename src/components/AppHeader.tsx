@@ -42,7 +42,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ userEmail, userRole, currentFreez
       </CardHeader>
       <CardContent className="text-center">
         <p className="text-lg font-semibold text-gray-800">{userEmail}</p>
-        {userRole && (userRole === 'Administrator' || userRole === 'Veterinario') && ( // Cambiado 'Administrador' a 'Administrator' para consistencia
+        {userRole && (userRole === 'Administrator' || userRole === 'Veterinary') && ( // Cambiado 'Veterinario' a 'Veterinary'
           <p className="text-md text-gray-600">Rol: <span className="font-medium">{userRole}</span></p>
         )}
         {currentFreezerName && (
