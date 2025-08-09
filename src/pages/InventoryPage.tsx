@@ -16,6 +16,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { es } from 'date-fns/locale';
+import { Switch } from "@/components/ui/switch"; // Import Switch for in-line editing
 
 interface InventoryItem {
   id: string;
@@ -57,13 +58,12 @@ const InventoryPage: React.FC = () => {
       created_at,
       status_solicitado,
       status_desfasado,
-      freezers ( name ),
-      profiles ( email )
+      freezers ( name )
     `);
 
     if (profile.role === 'User' && profile.current_freezer_id) {
       query = query.eq('freezer_id', profile.current_freezer_id);
-    } else if ((profile.role === 'Administrator' || profile.role === 'Veterinario') && profile.current_freezer_id) {
+    } else if ((profile.role === 'Administrator' || profile.role === 'Veterinario') && profile.current_freeizer_id) {
       // Admin/Veterinario with a selected freezer sees only that freezer
       query = query.eq('freezer_id', profile.current_freezer_id);
     }
@@ -81,11 +81,31 @@ const InventoryPage: React.FC = () => {
       });
       setInventoryItems([]);
     } else {
+      // Collect all unique user IDs
+      const uniqueUserIds = Array.from(new Set(data.map(item => item.created_by_user_id)));
+      let userEmailsMap = new Map<string, string>();
+
+      if (uniqueUserIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, email')
+          .in('id', uniqueUserIds);
+
+        if (profilesError) {
+          console.error("Error fetching user profiles for emails:", profilesError);
+          // Continue without emails if there's an error
+        } else {
+          profilesData.forEach(profile => {
+            userEmailsMap.set(profile.id, profile.email);
+          });
+        }
+      }
+
       // Map data to include freezer_name and created_by_user_email directly
       const itemsWithFreezerAndUserName = data.map(item => ({
         ...item,
         freezer_name: item.freezers?.name || 'Desconocido',
-        created_by_user_email: item.profiles?.email || 'Desconocido'
+        created_by_user_email: userEmailsMap.get(item.created_by_user_id) || 'Desconocido'
       }));
       setInventoryItems(itemsWithFreezerAndUserName as InventoryItem[]);
     }
@@ -160,6 +180,41 @@ const InventoryPage: React.FC = () => {
     navigate(`/edit-item/${itemId}`);
   };
 
+  const handleStatusChange = async (itemId: string, statusKey: 'status_solicitado' | 'status_desfasado', newValue: boolean) => {
+    setLoading(true); // Temporarily set loading to prevent multiple rapid changes
+    try {
+      const { error } = await supabase
+        .from('inventory')
+        .update({ [statusKey]: newValue })
+        .eq('id', itemId);
+
+      if (error) {
+        toast({
+          title: "Error al actualizar estado",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Éxito",
+          description: "Estado actualizado correctamente.",
+        });
+        // Re-fetch inventory to reflect the change
+        if (userProfile) {
+          await fetchInventory(userProfile);
+        }
+      }
+    } catch (err: any) {
+      toast({
+        title: "Error inesperado",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
@@ -175,7 +230,7 @@ const InventoryPage: React.FC = () => {
 
   const showFreezerColumn = (userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinario') && !userProfile?.current_freezer_id;
   const showAdminColumns = userProfile?.role === 'Administrator';
-  const showVeterinarioEdit = userProfile?.role === 'Veterinario';
+  const canEditStatus = userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinario';
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
@@ -200,13 +255,13 @@ const InventoryPage: React.FC = () => {
               <Table>
                 <TableHeader className="sticky top-0 bg-background z-10"> {/* Sticky header */}
                   <TableRow>
-                    {showFreezerColumn && <TableHead className="w-[120px]">Congelador</TableHead>}
                     <TableHead className="w-[60px] text-center">Solicitado</TableHead>
                     <TableHead className="w-[60px] text-center">Desfasado</TableHead>
                     <TableHead className="w-[100px]">Precinto</TableHead>
                     <TableHead className="w-[120px]">Especie</TableHead>
                     <TableHead className="w-[100px]">Fecha</TableHead>
                     <TableHead>Observaciones</TableHead>
+                    {showFreezerColumn && <TableHead className="w-[120px]">Congelador</TableHead>}
                     {showAdminColumns && (
                       <>
                         <TableHead className="w-[120px]">Creado Por</TableHead>
@@ -219,17 +274,31 @@ const InventoryPage: React.FC = () => {
                 <TableBody>
                   {inventoryItems.map((item) => (
                     <TableRow key={item.id}>
-                      {showFreezerColumn && <TableCell>{item.freezer_name}</TableCell>}
                       <TableCell className="text-center">
-                        {item.status_solicitado ? <Check className="h-5 w-5 text-green-500 mx-auto" /> : ''}
+                        {canEditStatus ? (
+                          <Switch
+                            checked={item.status_solicitado}
+                            onCheckedChange={(checked) => handleStatusChange(item.id, 'status_solicitado', checked)}
+                          />
+                        ) : (
+                          item.status_solicitado ? <Check className="h-5 w-5 text-green-500 mx-auto" /> : ''
+                        )}
                       </TableCell>
                       <TableCell className="text-center">
-                        {item.status_desfasado ? <X className="h-5 w-5 text-red-500 mx-auto" /> : ''}
+                        {canEditStatus ? (
+                          <Switch
+                            checked={item.status_desfasado}
+                            onCheckedChange={(checked) => handleStatusChange(item.id, 'status_desfasado', checked)}
+                          />
+                        ) : (
+                          item.status_desfasado ? <X className="h-5 w-5 text-red-500 mx-auto" /> : ''
+                        )}
                       </TableCell>
                       <TableCell>{item.seal_no || '-'}</TableCell>
                       <TableCell>{item.species}</TableCell>
                       <TableCell>{format(new Date(item.entry_date), "dd/MM/yyyy", { locale: es })}</TableCell>
                       <TableCell>{item.observations || '-'}</TableCell>
+                      {showFreezerColumn && <TableCell>{item.freezer_name}</TableCell>}
                       {showAdminColumns && (
                         <>
                           <TableCell>{item.created_by_user_email}</TableCell>
@@ -241,14 +310,6 @@ const InventoryPage: React.FC = () => {
                             </Button>
                           </TableCell>
                         </>
-                      )}
-                      {showVeterinarioEdit && !showAdminColumns && ( // Veterinarios solo pueden editar si no son administradores
-                        <TableCell className="text-center">
-                          <Button variant="ghost" size="icon" onClick={() => handleEditItem(item.id)}>
-                            <Edit className="h-4 w-4" />
-                            <span className="sr-only">Editar</span>
-                          </Button>
-                        </TableCell>
                       )}
                     </TableRow>
                   ))}

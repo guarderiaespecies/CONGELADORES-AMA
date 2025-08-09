@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { useNavigate, useParams } from 'react-router-dom'; // Import useParams
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } = from "@/components/ui/use-toast";
 import { ArrowLeft, Calendar as CalendarIcon } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -210,11 +210,9 @@ const EditItemPage: React.FC = () => {
         observations: formData.observations || null,
       };
 
+      // Only Administrator can change freezer_id and status fields here
       if (userRole === 'Administrator') {
         updatePayload.freezer_id = formData.freezerId;
-        updatePayload.status_solicitado = formData.statusSolicitado;
-        updatePayload.status_desfasado = formData.statusDesfasado;
-      } else if (userRole === 'Veterinario') {
         updatePayload.status_solicitado = formData.statusSolicitado;
         updatePayload.status_desfasado = formData.statusDesfasado;
       }
@@ -261,14 +259,14 @@ const EditItemPage: React.FC = () => {
     );
   }
 
-  // If not an administrator or veterinarian, redirect
-  if (userRole !== 'Administrator' && userRole !== 'Veterinario') {
+  // If not an administrator, redirect
+  if (userRole !== 'Administrator') {
     toast({
       title: "Acceso Denegado",
-      description: "Solo los administradores y veterinarios pueden modificar elementos del inventario.",
+      description: "Solo los administradores pueden modificar elementos del inventario.",
       variant: "destructive",
     });
-    navigate('/inventory'); // Redirect non-admins/vets to the view-only inventory page
+    navigate('/inventory'); // Redirect non-admins to the view-only inventory page
     return null; // Render nothing while redirecting
   }
 
@@ -321,7 +319,8 @@ const EditItemPage: React.FC = () => {
                 id="statusSolicitado"
                 checked={formData.statusSolicitado}
                 onCheckedChange={handleStatusSolicitadoChange}
-                disabled={userRole !== 'Administrator' && userRole !== 'Veterinario'}
+                // Only Administrator can modify these here, Veterinarians do it in-line
+                disabled={userRole !== 'Administrator'}
               />
             </div>
 
@@ -331,7 +330,8 @@ const EditItemPage: React.FC = () => {
                 id="statusDesfasado"
                 checked={formData.statusDesfasado}
                 onCheckedChange={handleStatusDesfasadoChange}
-                disabled={userRole !== 'Administrator' && userRole !== 'Veterinario'}
+                // Only Administrator can modify these here, Veterinarians do it in-line
+                disabled={userRole !== 'Administrator'}
               />
             </div>
 
