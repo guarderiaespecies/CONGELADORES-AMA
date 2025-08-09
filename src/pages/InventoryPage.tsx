@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } => {
+import { useToast } from "@/components/ui/use-toast";
 import { ArrowLeft, Check, X, Edit } from "lucide-react";
 import {
   Table,
@@ -66,11 +66,14 @@ const InventoryPage: React.FC = () => {
       freezers ( name )
     `);
 
+    // Logic for filtering inventory based on user role and current_freezer_id
     if (profile.role === 'User' && profile.current_freezer_id) {
       query = query.eq('freezer_id', profile.current_freezer_id);
     } else if ((profile.role === 'Administrator' || profile.role === 'Veterinario') && profile.current_freezer_id) {
+      // If Admin/Veterinario has a specific freezer selected, show only that one
       query = query.eq('freezer_id', profile.current_freezer_id);
     }
+    // If Admin/Veterinario has NO current_freezer_id, the query remains unfiltered, showing all.
 
     query = query.order('entry_date', { ascending: false });
 
@@ -196,8 +199,6 @@ const InventoryPage: React.FC = () => {
     };
   }, [navigate, toast, fetchInventory, fetchFreezerName]);
 
-  // Removed useEffect for tableHeaderStickyTop as it's no longer needed
-
   const handleEditItem = (itemId: string) => {
     navigate(`/edit-item/${itemId}`);
   };
@@ -266,6 +267,8 @@ const InventoryPage: React.FC = () => {
     );
   }
 
+  // Determine if the "Congelador" column should be shown
+  // It should be shown if the user is Admin/Veterinario AND they are NOT currently filtered by a specific freezer.
   const showFreezerColumn = (userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinario') && !userProfile?.current_freezer_id;
   const showAdminColumns = userProfile?.role === 'Administrator';
   const canEditStatus = userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinario';
