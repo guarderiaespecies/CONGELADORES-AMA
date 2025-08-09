@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { es } from 'date-fns/locale';
 import { Switch } from "@/components/ui/switch"; // Import Switch for in-line editing
+import { cn } from "@/lib/utils"; // Import cn for conditional classNames
 
 interface InventoryItem {
   id: string;
@@ -63,7 +64,7 @@ const InventoryPage: React.FC = () => {
 
     if (profile.role === 'User' && profile.current_freezer_id) {
       query = query.eq('freezer_id', profile.current_freezer_id);
-    } else if ((profile.role === 'Administrator' || profile.role === 'Veterinario') && profile.current_freeizer_id) {
+    } else if ((profile.role === 'Administrator' || profile.role === 'Veterinario') && profile.current_freezer_id) {
       // Admin/Veterinario with a selected freezer sees only that freezer
       query = query.eq('freezer_id', profile.current_freezer_id);
     }
@@ -215,6 +216,23 @@ const InventoryPage: React.FC = () => {
     }
   };
 
+  const getRowClasses = (item: InventoryItem) => {
+    if (item.status_desfasado) { // Red takes precedence
+      return "bg-red-100";
+    }
+    if (item.status_solicitado) {
+      return "bg-green-100";
+    }
+    return "";
+  };
+
+  const getIconColorClass = (item: InventoryItem) => {
+    if (item.status_solicitado || item.status_desfasado) {
+      return "text-white"; // White icon if row is highlighted
+    }
+    return ""; // Default icon color (from shadcn/ui)
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
@@ -247,75 +265,73 @@ const InventoryPage: React.FC = () => {
             <span className="sr-only">Volver</span>
           </Button>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-x-auto max-h-[calc(100vh-250px)] overflow-y-auto"> {/* Moved scroll classes here */}
           {inventoryItems.length === 0 ? (
             <p className="text-center text-gray-500 p-4">No hay elementos en el inventario de este congelador.</p>
           ) : (
-            <div className="overflow-x-auto max-h-[calc(100vh-250px)] overflow-y-auto"> {/* Added max-h and overflow-y-auto */}
-              <Table>
-                <TableHeader className="sticky top-0 bg-background z-10"> {/* Sticky header */}
-                  <TableRow>
-                    <TableHead className="w-[60px] text-center">Solicitado</TableHead>
-                    <TableHead className="w-[60px] text-center">Desfasado</TableHead>
-                    <TableHead className="w-[100px]">Precinto</TableHead>
-                    <TableHead className="w-[120px]">Especie</TableHead>
-                    <TableHead className="w-[100px]">Fecha</TableHead>
-                    <TableHead>Observaciones</TableHead>
-                    {showFreezerColumn && <TableHead className="w-[120px]">Congelador</TableHead>}
+            <Table>
+              <TableHeader className="sticky top-0 bg-background z-10"> {/* Sticky header */}
+                <TableRow>
+                  {showFreezerColumn && <TableHead className="w-[120px]">Congelador</TableHead>}
+                  <TableHead className="w-[100px]">Precinto</TableHead>
+                  <TableHead className="w-[120px]">Especie</TableHead>
+                  <TableHead className="w-[100px]">Fecha</TableHead>
+                  <TableHead>Observaciones</TableHead>
+                  {showAdminColumns && (
+                    <>
+                      <TableHead className="w-[120px]">Creado Por</TableHead>
+                      <TableHead className="w-[150px]">Fecha Creación</TableHead>
+                      <TableHead className="w-[80px] text-center">Acciones</TableHead>
+                    </>
+                  )}
+                  <TableHead className="w-[60px] text-center">Solicitado</TableHead>
+                  <TableHead className="w-[60px] text-center">Desfasado</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {inventoryItems.map((item) => (
+                  <TableRow key={item.id} className={getRowClasses(item)}>
+                    {showFreezerColumn && <TableCell>{item.freezer_name}</TableCell>}
+                    <TableCell>{item.seal_no || '-'}</TableCell>
+                    <TableCell>{item.species}</TableCell>
+                    <TableCell>{format(new Date(item.entry_date), "dd/MM/yyyy", { locale: es })}</TableCell>
+                    <TableCell>{item.observations || '-'}</TableCell>
                     {showAdminColumns && (
                       <>
-                        <TableHead className="w-[120px]">Creado Por</TableHead>
-                        <TableHead className="w-[150px]">Fecha Creación</TableHead>
-                        <TableHead className="w-[80px] text-center">Acciones</TableHead>
+                        <TableCell>{item.created_by_user_email}</TableCell>
+                        <TableCell>{format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: es })}</TableCell>
+                        <TableCell className="text-center">
+                          <Button variant="ghost" size="icon" onClick={() => handleEditItem(item.id)}>
+                            <Edit className="h-4 w-4" />
+                            <span className="sr-only">Editar</span>
+                          </Button>
+                        </TableCell>
                       </>
                     )}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {inventoryItems.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="text-center">
-                        {canEditStatus ? (
-                          <Switch
-                            checked={item.status_solicitado}
-                            onCheckedChange={(checked) => handleStatusChange(item.id, 'status_solicitado', checked)}
-                          />
-                        ) : (
-                          item.status_solicitado ? <Check className="h-5 w-5 text-green-500 mx-auto" /> : ''
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {canEditStatus ? (
-                          <Switch
-                            checked={item.status_desfasado}
-                            onCheckedChange={(checked) => handleStatusChange(item.id, 'status_desfasado', checked)}
-                          />
-                        ) : (
-                          item.status_desfasado ? <X className="h-5 w-5 text-red-500 mx-auto" /> : ''
-                        )}
-                      </TableCell>
-                      <TableCell>{item.seal_no || '-'}</TableCell>
-                      <TableCell>{item.species}</TableCell>
-                      <TableCell>{format(new Date(item.entry_date), "dd/MM/yyyy", { locale: es })}</TableCell>
-                      <TableCell>{item.observations || '-'}</TableCell>
-                      {showFreezerColumn && <TableCell>{item.freezer_name}</TableCell>}
-                      {showAdminColumns && (
-                        <>
-                          <TableCell>{item.created_by_user_email}</TableCell>
-                          <TableCell>{format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: es })}</TableCell>
-                          <TableCell className="text-center">
-                            <Button variant="ghost" size="icon" onClick={() => handleEditItem(item.id)}>
-                              <Edit className="h-4 w-4" />
-                              <span className="sr-only">Editar</span>
-                            </Button>
-                          </TableCell>
-                        </>
+                    <TableCell className="text-center">
+                      {canEditStatus ? (
+                        <Switch
+                          checked={item.status_solicitado}
+                          onCheckedChange={(checked) => handleStatusChange(item.id, 'status_solicitado', checked)}
+                        />
+                      ) : (
+                        item.status_solicitado ? <Check className={cn("h-5 w-5 mx-auto", getIconColorClass(item))} /> : ''
                       )}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {canEditStatus ? (
+                        <Switch
+                          checked={item.status_desfasado}
+                          onCheckedChange={(checked) => handleStatusChange(item.id, 'status_desfasado', checked)}
+                        />
+                      ) : (
+                        item.status_desfasado ? <X className={cn("h-5 w-5 mx-auto", getIconColorClass(item))} /> : ''
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>

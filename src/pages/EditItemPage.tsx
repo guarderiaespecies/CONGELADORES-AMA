@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { useNavigate, useParams } from 'react-router-dom'; // Import useParams
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast"; // Corrected import
+import { useToast } from "@/components/ui/use-toast";
 import { ArrowLeft, Calendar as CalendarIcon } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
