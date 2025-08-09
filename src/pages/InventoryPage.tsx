@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -9,10 +9,8 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
-  TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/components/ui/table"; // Removed TableHead, TableHeader
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -46,9 +44,6 @@ const InventoryPage: React.FC = () => {
   const [currentFreezerName, setCurrentFreezerName] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  const cardHeaderRef = useRef<HTMLDivElement>(null);
-  const [tableHeaderTopOffset, setTableHeaderTopOffset] = useState(0);
 
   const fetchInventory = useCallback(async (profile: UserProfile) => {
     setLoading(true);
@@ -193,22 +188,6 @@ const InventoryPage: React.FC = () => {
     };
   }, [navigate, toast, fetchInventory, fetchFreezerName]);
 
-  // Effect to calculate the offset for the table header
-  useEffect(() => {
-    const calculateOffset = () => {
-      if (cardHeaderRef.current) {
-        // Get the bottom position of the CardHeader relative to the viewport
-        const headerBottom = cardHeaderRef.current.getBoundingClientRect().bottom;
-        setTableHeaderTopOffset(headerBottom);
-      }
-    };
-
-    // Recalculate on mount, resize, and when inventory items or loading state changes
-    calculateOffset();
-    window.addEventListener('resize', calculateOffset);
-    return () => window.removeEventListener('resize', calculateOffset);
-  }, [loading, inventoryItems]); // Depend on loading and inventoryItems to recalculate if content changes
-
   const handleEditItem = (itemId: string) => {
     navigate(`/edit-item/${itemId}`);
   };
@@ -281,10 +260,24 @@ const InventoryPage: React.FC = () => {
   const showAdminColumns = userProfile?.role === 'Administrator';
   const canEditStatus = userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinario';
 
+  // Define grid columns based on visibility of columns
+  const gridColumns = `
+    ${showFreezerColumn ? '120px' : ''}
+    100px /* Precinto */
+    120px /* Especie */
+    100px /* Fecha */
+    minmax(150px, 1fr) /* Observaciones - flexible */
+    ${showAdminColumns ? '120px' : ''} /* Creado Por */
+    ${showAdminColumns ? '150px' : ''} /* Fecha Creación */
+    ${showAdminColumns ? '80px' : ''} /* Acciones */
+    60px /* Solicitado */
+    60px /* Desfasado */
+  `.replace(/\s+/g, ' ').trim(); // Clean up spaces
+
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
-      <Card className="w-full max-w-4xl mx-auto mt-8 shadow-lg"> {/* No overflow-y-auto here, body will scroll */}
-        <CardHeader ref={cardHeaderRef} className="sticky top-[48px] bg-background z-20"> {/* Sticks to viewport at 48px */}
+      <Card className="w-full max-w-4xl mx-auto mt-8 shadow-lg">
+        <CardHeader className="sticky top-[48px] bg-background z-20 pb-0"> {/* CardHeader is sticky, pb-0 to reduce space */}
           <CardTitle className="text-center">
             {userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinario' ?
               (currentFreezerName ? `Inventario del Congelador: ${currentFreezerName}` : 'Inventario de los Congeladores')
@@ -301,44 +294,53 @@ const InventoryPage: React.FC = () => {
             <ArrowLeft className="h-5 w-5" />
             <span className="sr-only">Volver</span>
           </Button>
+
+          {/* Custom Fixed Table Header */}
+          {inventoryItems.length > 0 && (
+            <div
+              className="grid gap-x-2 py-2 px-4 border-b bg-background text-muted-foreground font-medium text-sm"
+              style={{ gridTemplateColumns: gridColumns }}
+            >
+              {showFreezerColumn && <div className="w-[120px]">Congelador</div>}
+              <div className="w-[100px]">Precinto</div>
+              <div className="w-[120px]">Especie</div>
+              <div className="w-[100px]">Fecha</div>
+              <div className="min-w-[150px]">Observaciones</div>
+              {showAdminColumns && (
+                <>
+                  <div className="w-[120px]">Creado Por</div>
+                  <div className="w-[150px]">Fecha Creación</div>
+                  <div className="w-[80px] text-center">Acciones</div>
+                </>
+              )}
+              <div className="w-[60px] text-center">Solicitado</div>
+              <div className="w-[60px] text-center">Desfasado</div>
+            </div>
+          )}
         </CardHeader>
-        <CardContent className="overflow-x-auto"> {/* Only horizontal scroll here */}
+        <CardContent className="overflow-x-auto pt-0"> {/* CardContent only needs horizontal scroll, pt-0 to remove top padding */}
           {inventoryItems.length === 0 ? (
             <p className="text-center text-gray-500 p-4">No hay elementos en el inventario de este congelador.</p>
           ) : (
             <Table>
-              {/* Use the dynamically calculated offset for TableHeader */}
-              <TableHeader className="sticky bg-background z-10" style={{ top: `${tableHeaderTopOffset}px` }}>
-                <TableRow>
-                  {showFreezerColumn && <TableHead className="w-[120px]">Congelador</TableHead>}
-                  <TableHead className="w-[100px]">Precinto</TableHead>
-                  <TableHead className="w-[120px]">Especie</TableHead>
-                  <TableHead className="w-[100px]">Fecha</TableHead>
-                  <TableHead>Observaciones</TableHead>
-                  {showAdminColumns && (
-                    <>
-                      <TableHead className="w-[120px]">Creado Por</TableHead>
-                      <TableHead className="w-[150px]">Fecha Creación</TableHead>
-                      <TableHead className="w-[80px] text-center">Acciones</TableHead>
-                    </>
-                  )}
-                  <TableHead className="w-[60px] text-center">Solicitado</TableHead>
-                  <TableHead className="w-[60px] text-center">Desfasado</TableHead>
-                </TableRow>
-              </TableHeader>
+              {/* No TableHeader here, it's now part of CardHeader */}
               <TableBody>
                 {inventoryItems.map((item) => (
-                  <TableRow key={item.id} className={getRowClasses(item)}>
-                    {showFreezerColumn && <TableCell>{item.freezer_name}</TableCell>}
-                    <TableCell>{item.seal_no || '-'}</TableCell>
-                    <TableCell>{item.species}</TableCell>
-                    <TableCell>{format(new Date(item.entry_date), "dd/MM/yyyy", { locale: es })}</TableCell>
-                    <TableCell>{item.observations || '-'}</TableCell>
+                  <TableRow
+                    key={item.id}
+                    className={cn(getRowClasses(item), "grid gap-x-2")}
+                    style={{ gridTemplateColumns: gridColumns }}
+                  >
+                    {showFreezerColumn && <TableCell className="w-[120px]">{item.freezer_name}</TableCell>}
+                    <TableCell className="w-[100px]">{item.seal_no || '-'}</TableCell>
+                    <TableCell className="w-[120px]">{item.species}</TableCell>
+                    <TableCell className="w-[100px]">{format(new Date(item.entry_date), "dd/MM/yyyy", { locale: es })}</TableCell>
+                    <TableCell className="min-w-[150px]">{item.observations || '-'}</TableCell>
                     {showAdminColumns && (
                       <>
-                        <TableCell>{item.created_by_user_email}</TableCell>
-                        <TableCell>{format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: es })}</TableCell>
-                        <TableCell className="text-center">
+                        <TableCell className="w-[120px]">{item.created_by_user_email}</TableCell>
+                        <TableCell className="w-[150px]">{format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: es })}</TableCell>
+                        <TableCell className="w-[80px] text-center">
                           <Button variant="ghost" size="icon" onClick={() => handleEditItem(item.id)}>
                             <Edit className="h-4 w-4" />
                             <span className="sr-only">Editar</span>
@@ -346,7 +348,7 @@ const InventoryPage: React.FC = () => {
                         </TableCell>
                       </>
                     )}
-                    <TableCell className="text-center">
+                    <TableCell className="w-[60px] text-center">
                       {canEditStatus ? (
                         <Switch
                           checked={item.status_solicitado}
@@ -356,7 +358,7 @@ const InventoryPage: React.FC = () => {
                         item.status_solicitado ? <Check className={cn("h-5 w-5 mx-auto", getIconColorClass(item))} /> : ''
                       )}
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="w-[60px] text-center">
                       {canEditStatus ? (
                         <Switch
                           checked={item.status_desfasado}
