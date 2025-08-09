@@ -78,7 +78,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
     } else if (profile.role === 'Administrator' && profile.current_freezer_id) {
       // If Admin has a specific freezer selected, show only that one
       query = query.eq('freezer_id', profile.current_freezer_id);
-      console.log("DEBUG: InventoryPage - Filtering by admin's current freezer:", profile.current_freeizer_id);
+      console.log("DEBUG: InventoryPage - Filtering by admin's current freezer:", profile.current_freezer_id);
     } else if (profile.role === 'Veterinary' || (profile.role === 'Administrator' && !profile.current_freezer_id)) {
       // Veterinarians always see all, and Administrators see all if no freezer is selected
       console.log("DEBUG: InventoryPage - No freezer filter applied (Admin/Veterinary viewing all).");
@@ -89,7 +89,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
 
     // Order by freezer name ascending, then by entry date descending (most recent first)
     query = query
-      .order('freezers.name', { ascending: true })
+      .order('name', { ascending: true, foreignTable: 'freezers' }) // Corrected ordering for foreign table
       .order('entry_date', { ascending: false });
 
     const { data, error } = await query;
@@ -195,7 +195,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
           description: "No tienes un congelador seleccionado. Por favor, selecciona uno para ver el inventario.",
           variant: "default",
         });
-        navigate('/change-freezer');
+        navigate('/change-freeizer');
         setLoading(false);
         return;
       }
