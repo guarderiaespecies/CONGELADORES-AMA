@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,9 @@ const InventoryPage: React.FC = () => {
   const [currentFreezerName, setCurrentFreezerName] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const cardHeaderRef = useRef<HTMLDivElement>(null);
+  const [tableHeaderStickyTop, setTableHeaderStickyTop] = useState(0);
 
   const fetchInventory = useCallback(async (profile: UserProfile) => {
     setLoading(true);
@@ -190,6 +193,26 @@ const InventoryPage: React.FC = () => {
     };
   }, [navigate, toast, fetchInventory, fetchFreezerName]);
 
+  // Effect to calculate the offset for the table header
+  useEffect(() => {
+    const updateStickyPositions = () => {
+      if (cardHeaderRef.current) {
+        // The CardHeader is sticky at top-0. Its height is cardHeaderRef.current.offsetHeight.
+        // So, the TableHeader should stick at this height.
+        setTableHeaderStickyTop(cardHeaderRef.current.offsetHeight);
+      }
+    };
+
+    // Set initial position and update on resize
+    updateStickyPositions();
+    window.addEventListener('resize', updateStickyPositions);
+
+    // Clean up
+    return () => {
+      window.removeEventListener('resize', updateStickyPositions);
+    };
+  }, [loading, inventoryItems]); // Depend on loading and inventoryItems to recalculate if content changes
+
   const handleEditItem = (itemId: string) => {
     navigate(`/edit-item/${itemId}`);
   };
@@ -266,7 +289,7 @@ const InventoryPage: React.FC = () => {
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
       <Card className="w-full max-w-4xl mx-auto mt-8 shadow-lg">
         {/* CardHeader: Sticky to viewport, solid background */}
-        <CardHeader className="sticky top-[48px] bg-card z-20 pb-0">
+        <CardHeader ref={cardHeaderRef} className="sticky top-0 bg-card z-20 pt-[calc(2rem+2rem)] pb-0"> {/* Adjusted top to 0, added padding-top */}
           <CardTitle className="text-center">
             {userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinario' ?
               (currentFreezerName ? `Inventario del Congelador: ${currentFreezerName}` : 'Inventario de los Congeladores')
@@ -278,7 +301,7 @@ const InventoryPage: React.FC = () => {
             variant="ghost"
             size="icon"
             onClick={() => navigate('/app')}
-            className="absolute top-2 right-2 h-8 w-8"
+            className="absolute top-[calc(2rem+2rem-0.5rem)] right-2 h-8 w-8" {/* Adjusted top for button */}
           >
             <ArrowLeft className="h-5 w-5" />
             <span className="sr-only">Volver</span>
@@ -286,76 +309,74 @@ const InventoryPage: React.FC = () => {
         </CardHeader>
 
         {/* CardContent: Contains the scrollable table */}
-        <CardContent className="p-0"> {/* Remove padding here, add to inner div if needed */}
+        <CardContent className="p-0 overflow-x-auto"> {/* Only horizontal scroll here */}
           {inventoryItems.length === 0 ? (
             <p className="text-center text-gray-500 p-4">No hay elementos en el inventario de este congelador.</p>
           ) : (
-            <div className="relative max-h-[calc(100vh-250px)] overflow-y-auto overflow-x-auto"> {/* Max height for vertical scroll, and horizontal scroll for table */}
-              <Table>
-                {/* TableHeader: Sticky within this scrollable div */}
-                <TableHeader className="sticky top-0 bg-card z-10">
-                  <TableRow>
-                    {showFreezerColumn && <TableHead className="w-[120px]">Congelador</TableHead>}
-                    <TableHead className="w-[100px]">Precinto</TableHead>
-                    <TableHead className="w-[120px]">Especie</TableHead>
-                    <TableHead className="w-[100px]">Fecha</TableHead>
-                    <TableHead className="min-w-[150px]">Observaciones</TableHead>
+            <Table>
+              {/* TableHeader: Sticky within the main scroll context */}
+              <TableHeader className="sticky bg-card z-10" style={{ top: `${tableHeaderStickyTop}px` }}>
+                <TableRow>
+                  {showFreezerColumn && <TableHead className="w-[120px]">Congelador</TableHead>}
+                  <TableHead className="w-[100px]">Precinto</TableHead>
+                  <TableHead className="w-[120px]">Especie</TableHead>
+                  <TableHead className="w-[100px]">Fecha</TableHead>
+                  <TableHead className="min-w-[150px]">Observaciones</TableHead>
+                  {showAdminColumns && (
+                    <>
+                      <TableHead className="w-[120px]">Creado Por</TableHead>
+                      <TableHead className="w-[150px]">Fecha Creación</TableHead>
+                      <TableHead className="w-[80px] text-center">Acciones</TableHead>
+                    </>
+                  )}
+                  <TableHead className="w-[60px] text-center">Solicitado</TableHead>
+                  <TableHead className="w-[60px] text-center">Desfasado</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {inventoryItems.map((item) => (
+                  <TableRow key={item.id} className={getRowClasses(item)}>
+                    {showFreezerColumn && <TableCell className="w-[120px]">{item.freezer_name}</TableCell>}
+                    <TableCell className="w-[100px]">{item.seal_no || '-'}</TableCell>
+                    <TableCell className="w-[120px]">{item.species}</TableCell>
+                    <TableCell className="w-[100px]">{format(new Date(item.entry_date), "dd/MM/yyyy", { locale: es })}</TableCell>
+                    <TableCell className="min-w-[150px]">{item.observations || '-'}</TableCell>
                     {showAdminColumns && (
                       <>
-                        <TableHead className="w-[120px]">Creado Por</TableHead>
-                        <TableHead className="w-[150px]">Fecha Creación</TableHead>
-                        <TableHead className="w-[80px] text-center">Acciones</TableHead>
+                        <TableCell className="w-[120px]">{item.created_by_user_email}</TableCell>
+                        <TableCell className="w-[150px]">{format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: es })}</TableCell>
+                        <TableCell className="w-[80px] text-center">
+                          <Button variant="ghost" size="icon" onClick={() => handleEditItem(item.id)}>
+                            <Edit className="h-4 w-4" />
+                            <span className="sr-only">Editar</span>
+                          </Button>
+                        </TableCell>
                       </>
                     )}
-                    <TableHead className="w-[60px] text-center">Solicitado</TableHead>
-                    <TableHead className="w-[60px] text-center">Desfasado</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {inventoryItems.map((item) => (
-                    <TableRow key={item.id} className={getRowClasses(item)}>
-                      {showFreezerColumn && <TableCell className="w-[120px]">{item.freezer_name}</TableCell>}
-                      <TableCell className="w-[100px]">{item.seal_no || '-'}</TableCell>
-                      <TableCell className="w-[120px]">{item.species}</TableCell>
-                      <TableCell className="w-[100px]">{format(new Date(item.entry_date), "dd/MM/yyyy", { locale: es })}</TableCell>
-                      <TableCell className="min-w-[150px]">{item.observations || '-'}</TableCell>
-                      {showAdminColumns && (
-                        <>
-                          <TableCell className="w-[120px]">{item.created_by_user_email}</TableCell>
-                          <TableCell className="w-[150px]">{format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: es })}</TableCell>
-                          <TableCell className="w-[80px] text-center">
-                            <Button variant="ghost" size="icon" onClick={() => handleEditItem(item.id)}>
-                              <Edit className="h-4 w-4" />
-                              <span className="sr-only">Editar</span>
-                            </Button>
-                          </TableCell>
-                        </>
+                    <TableCell className="w-[60px] text-center">
+                      {canEditStatus ? (
+                        <Switch
+                          checked={item.status_solicitado}
+                          onCheckedChange={(checked) => handleStatusChange(item.id, 'status_solicitado', checked)}
+                        />
+                      ) : (
+                        item.status_solicitado ? <Check className={cn("h-5 w-5 mx-auto", getIconColorClass(item))} /> : ''
                       )}
-                      <TableCell className="w-[60px] text-center">
-                        {canEditStatus ? (
-                          <Switch
-                            checked={item.status_solicitado}
-                            onCheckedChange={(checked) => handleStatusChange(item.id, 'status_solicitado', checked)}
-                          />
-                        ) : (
-                          item.status_solicitado ? <Check className={cn("h-5 w-5 mx-auto", getIconColorClass(item))} /> : ''
-                        )}
-                      </TableCell>
-                      <TableCell className="w-[60px] text-center">
-                        {canEditStatus ? (
-                          <Switch
-                            checked={item.status_desfasado}
-                            onCheckedChange={(checked) => handleStatusChange(item.id, 'status_desfasado', checked)}
-                          />
-                        ) : (
-                          item.status_desfasado ? <X className={cn("h-5 w-5 mx-auto", getIconColorClass(item))} /> : ''
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                    </TableCell>
+                    <TableCell className="w-[60px] text-center">
+                      {canEditStatus ? (
+                        <Switch
+                          checked={item.status_desfasado}
+                          onCheckedChange={(checked) => handleStatusChange(item.id, 'status_desfasado', checked)}
+                        />
+                      ) : (
+                        item.status_desfasado ? <X className={cn("h-5 w-5 mx-auto", getIconColorClass(item))} /> : ''
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
