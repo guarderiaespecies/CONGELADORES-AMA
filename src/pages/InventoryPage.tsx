@@ -30,7 +30,6 @@ interface InventoryItem {
   status_solicitado: boolean;
   status_desfasado: boolean;
   freezer_name?: string;
-  created_by_user_email?: string; // Keeping for potential debug/future use
   created_by_username?: string; // New field for username
 }
 
@@ -68,7 +67,8 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
       created_at,
       status_solicitado,
       status_desfasado,
-      freezers ( name )
+      freezers ( name ),
+      profiles ( username ) // <--- Directamente seleccionamos el username de la tabla profiles
     `);
 
     // Logic for filtering inventory based on user role
@@ -104,30 +104,10 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
       });
       setInventoryItems([]);
     } else {
-      const uniqueUserIds = Array.from(new Set(data.map(item => item.created_by_user_id)));
-      // Change this map to store objects with email and username
-      let userDetailsMap = new Map<string, { email: string; username: string }>();
-
-      if (uniqueUserIds.length > 0) {
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, email, username') // Fetch username here
-          .in('id', uniqueUserIds);
-
-        if (profilesError) {
-          console.error("Error fetching user profiles for emails/usernames:", profilesError);
-        } else {
-          profilesData.forEach(profile => {
-            userDetailsMap.set(profile.id, { email: profile.email, username: profile.username });
-          });
-        }
-      }
-
       const itemsWithFreezerAndUserName = data.map(item => ({
         ...item,
         freezer_name: item.freezers?.name || 'Desconocido',
-        created_by_user_email: userDetailsMap.get(item.created_by_user_id)?.email || 'Desconocido',
-        created_by_username: userDetailsMap.get(item.created_by_user_id)?.username || 'Desconocido' // New field for username
+        created_by_username: item.profiles?.username || 'Desconocido' // <--- Usamos el username directamente del join
       }));
       setInventoryItems(itemsWithFreezerAndUserName as InventoryItem[]);
     }
