@@ -77,8 +77,8 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
       console.log("DEBUG: InventoryPage - Filtering by user's current freezer:", profile.current_freezer_id);
     } else if (profile.role === 'Administrator' && profile.current_freezer_id) {
       // If Admin has a specific freezer selected, show only that one
-      query = query.eq('freezer_id', profile.current_freeizer_id);
-      console.log("DEBUG: InventoryPage - Filtering by admin's current freezer:", profile.current_freezer_id);
+      query = query.eq('freezer_id', profile.current_freezer_id);
+      console.log("DEBUG: InventoryPage - Filtering by admin's current freezer:", profile.current_freeizer_id);
     } else if (profile.role === 'Veterinary' || (profile.role === 'Administrator' && !profile.current_freezer_id)) {
       // Veterinarians always see all, and Administrators see all if no freezer is selected
       console.log("DEBUG: InventoryPage - No freezer filter applied (Admin/Veterinary viewing all).");
@@ -325,11 +325,13 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
             <Table>
               <TableHeader className="bg-card z-10">
                 <TableRow>
+                  <TableHead className="w-[60px] text-center">Solicitado</TableHead>
+                  <TableHead className="w-[60px] text-center">Desfasado</TableHead>
                   {showFreezerColumn && <TableHead className="w-[120px]">Congelador</TableHead>}
                   <TableHead className="w-[100px]">Precinto</TableHead>
                   <TableHead className="w-[120px]">Especie</TableHead>
-                  <TableHead className="w-[100px]">Fecha</TableHead>
                   <TableHead className="min-w-[150px]">Observaciones</TableHead>
+                  <TableHead className="w-[100px]">Fecha</TableHead>
                   {showAdminColumns && (
                     <>
                       <TableHead className="w-[120px]">Creado Por</TableHead>
@@ -337,34 +339,11 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
                       <TableHead className="w-[80px] text-center">Acciones</TableHead>
                     </>
                   )}
-                  <TableHead className="w-[60px] text-center">Solicitado</TableHead>
-                  <TableHead className="w-[60px] text-center">Desfasado</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {inventoryItems.map((item) => (
                   <TableRow key={item.id} className={getRowClasses(item)}>
-                    {showFreezerColumn && <TableCell className="w-[120px]">{item.freezer_name}</TableCell>}
-                    <TableCell className="w-[100px]">{item.seal_no || '-'}</TableCell>
-                    <TableCell className="w-[120px]">{item.species}</TableCell>
-                    <TableCell className="w-[100px]">{format(new Date(item.entry_date), "dd/MM/yyyy", { locale: es })}</TableCell>
-                    <TableCell className="min-w-[150px]">{item.observations || '-'}</TableCell>
-                    {showAdminColumns ? ( // Only show these columns for Administrator
-                      <>
-                        <TableCell className="w-[120px]">{item.created_by_user_email}</TableCell>
-                        <TableCell className="w-[150px]">{format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: es })}</TableCell>
-                        <TableCell className="w-[80px] text-center">
-                          <Button variant="ghost" size="icon" onClick={() => handleEditItem(item.id)}>
-                            <Edit className="h-4 w-4" />
-                            <span className="sr-only">Editar</span>
-                          </Button>
-                        </TableCell>
-                      </>
-                    ) : (
-                      // For Veterinary, these cells are empty or not rendered if columns are hidden
-                      // No need to render empty cells if the TableHead is not rendered
-                      null
-                    )}
                     <TableCell className="w-[60px] text-center">
                       {canEditStatus ? (
                         <Switch
@@ -385,6 +364,25 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
                         item.status_desfasado ? <X className={cn("h-5 w-5 mx-auto", getIconColorClass(item))} /> : ''
                       )}
                     </TableCell>
+                    {showFreezerColumn && <TableCell className="w-[120px]">{item.freezer_name}</TableCell>}
+                    <TableCell className="w-[100px]">{item.seal_no || '-'}</TableCell>
+                    <TableCell className="w-[120px]">{item.species}</TableCell>
+                    <TableCell className="min-w-[150px]">{item.observations || '-'}</TableCell>
+                    <TableCell className="w-[100px]">{format(new Date(item.entry_date), "dd/MM/yyyy", { locale: es })}</TableCell>
+                    {showAdminColumns ? ( // Only show these columns for Administrator
+                      <>
+                        <TableCell className="w-[120px]">{item.created_by_user_email}</TableCell>
+                        <TableCell className="w-[150px]">{format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: es })}</TableCell>
+                        <TableCell className="w-[80px] text-center">
+                          <Button variant="ghost" size="icon" onClick={() => handleEditItem(item.id)}>
+                            <Edit className="h-4 w-4" />
+                            <span className="sr-only">Editar</span>
+                          </Button>
+                        </TableCell>
+                      </>
+                    ) : (
+                      null
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
