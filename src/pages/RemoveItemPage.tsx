@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+// import { useToast } from "@/components/ui/use-toast"; // Eliminado
 import { ArrowLeft } from "lucide-react";
 import {
   Table,
@@ -38,7 +38,7 @@ const RemoveItemPage: React.FC = () => {
   const [deleting, setDeleting] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [currentFreezerId, setCurrentFreezerId] = useState<string | null>(null);
-  const { toast } = useToast();
+  // const { toast } = useToast(); // Eliminado
   const navigate = useNavigate();
 
   const fetchInventory = useCallback(async (freezerId: string) => {
@@ -50,16 +50,12 @@ const RemoveItemPage: React.FC = () => {
       .order('entry_date', { ascending: false });
 
     if (error) {
-      toast({
-        title: "Error",
-        description: `No se pudo cargar el inventario: ${error.message}`,
-        variant: "destructive",
-      });
+      console.error(`No se pudo cargar el inventario: ${error.message}`, error);
       setInventoryItems([]);
     } else {
       setInventoryItems(data as InventoryItem[]);
     }
-  }, [toast]);
+  }, []); // Dependencias actualizadas
 
   useEffect(() => {
     const checkUserAndLoadData = async () => {
@@ -67,11 +63,7 @@ const RemoveItemPage: React.FC = () => {
       const { data: { user: sessionUser } } = await supabase.auth.getUser();
 
       if (!sessionUser) {
-        toast({
-          title: "Error",
-          description: "No se pudo obtener la información del usuario. Por favor, inicia sesión de nuevo.",
-          variant: "destructive",
-        });
+        console.error("Error: No se pudo obtener la información del usuario. Por favor, inicia sesión de nuevo.");
         navigate('/');
         setLoading(false); // Asegura que el estado de carga se desactive
         return;
@@ -86,29 +78,21 @@ const RemoveItemPage: React.FC = () => {
         .single();
 
       if (profileError && profileError.code !== 'PGRST116') {
-        toast({ title: "Error", description: "No se pudo obtener el congelador actual del usuario.", variant: "destructive" });
+        console.error("Error: No se pudo obtener el congelador actual del usuario.", profileError);
         navigate('/app');
         setLoading(false); // Asegura que el estado de carga se desactive
         return;
       } else if (profileData) {
         setCurrentFreezerId(profileData.current_freezer_id);
         if (!profileData.current_freezer_id) {
-          toast({
-            title: "Atención",
-            description: "No tienes un congelador seleccionado. Por favor, selecciona uno antes de retirar elementos.",
-            variant: "default",
-          });
+          console.warn("Atención: No tienes un congelador seleccionado. Por favor, selecciona uno antes de retirar elementos.");
           navigate('/change-freezer');
           setLoading(false); // Asegura que el estado de carga se desactive
           return;
         }
         await fetchInventory(profileData.current_freezer_id); // Espera a que se cargue el inventario
       } else {
-        toast({
-          title: "Error",
-          description: "No se encontró el perfil del usuario.",
-          variant: "destructive",
-        });
+        console.error("Error: No se encontró el perfil del usuario.");
         navigate('/app');
       }
       setLoading(false); // Finaliza la carga para toda la página
@@ -128,7 +112,7 @@ const RemoveItemPage: React.FC = () => {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [navigate, toast, fetchInventory]);
+  }, [navigate, fetchInventory]); // Dependencias actualizadas
 
   const handleCheckboxChange = (itemId: string, isChecked: boolean) => {
     setSelectedItems((prevSelected) => {
@@ -144,11 +128,7 @@ const RemoveItemPage: React.FC = () => {
 
   const handleRemoveItems = async () => {
     if (selectedItems.size === 0) {
-      toast({
-        title: "Advertencia",
-        description: "Por favor, selecciona al menos un elemento para retirar.",
-        variant: "default",
-      });
+      console.warn("Advertencia: Por favor, selecciona al menos un elemento para retirar.");
       return;
     }
 
@@ -164,16 +144,9 @@ const RemoveItemPage: React.FC = () => {
         .in('id', Array.from(selectedItems));
 
       if (error) {
-        toast({
-          title: "Error al retirar elementos",
-          description: error.message,
-          variant: "destructive",
-        });
+        console.error("Error al retirar elementos:", error);
       } else {
-        toast({
-          title: "Éxito",
-          description: `${selectedItems.size} elemento(s) retirado(s) correctamente.`,
-        });
+        console.log(`${selectedItems.size} elemento(s) retirado(s) correctamente.`);
         // Eliminado: sessionStorage.setItem('hasMadeChanges', 'true'); // Activar el botón Modificar
         setSelectedItems(new Set()); // Clear selection
         if (currentFreezerId) {
@@ -181,11 +154,7 @@ const RemoveItemPage: React.FC = () => {
         }
       }
     } catch (err: any) {
-      toast({
-        title: "Error inesperado",
-        description: err.message,
-        variant: "destructive",
-      });
+      console.error("Error inesperado:", err);
     } finally {
       setDeleting(false);
     }

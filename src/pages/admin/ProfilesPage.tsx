@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+// import { useToast } from "@/components/ui/use-toast"; // Eliminado
 import { ArrowLeft, Edit, Trash2 } from "lucide-react";
 import {
   Table,
@@ -65,7 +65,7 @@ const ProfilesPage: React.FC = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const { toast } = useToast();
+  // const { toast } = useToast(); // Eliminado
   const navigate = useNavigate();
 
   const fetchProfiles = useCallback(async () => {
@@ -84,11 +84,7 @@ const ProfilesPage: React.FC = () => {
       .order('username', { ascending: true });
 
     if (error) {
-      toast({
-        title: "Error",
-        description: `No se pudieron cargar los perfiles: ${error.message}`,
-        variant: "destructive",
-      });
+      console.error(`No se pudieron cargar los perfiles: ${error.message}`, error);
       setProfiles([]);
     } else {
       const profilesWithFreezerNames = data.map(profile => ({
@@ -99,7 +95,7 @@ const ProfilesPage: React.FC = () => {
       setProfiles(profilesWithFreezerNames as Profile[]);
     }
     setLoading(false);
-  }, [toast]);
+  }, []); // Dependencias actualizadas
 
   const fetchFreezers = useCallback(async () => {
     const { data, error } = await supabase
@@ -108,16 +104,12 @@ const ProfilesPage: React.FC = () => {
       .order('name', { ascending: true });
 
     if (error) {
-      toast({
-        title: "Error",
-        description: `No se pudieron cargar los congeladores para los selectores: ${error.message}`,
-        variant: "destructive",
-      });
+      console.error(`No se pudieron cargar los congeladores para los selectores: ${error.message}`, error);
       setFreezers([]);
     } else {
       setFreezers(data || []);
     }
-  }, [toast]);
+  }, []); // Dependencias actualizadas
 
   useEffect(() => {
     const checkUserAndLoadData = async () => {
@@ -125,7 +117,7 @@ const ProfilesPage: React.FC = () => {
       const { data: { user: sessionUser } } = await supabase.auth.getUser();
 
       if (!sessionUser) {
-        toast({ title: "Error", description: "No se pudo obtener la información del usuario. Por favor, inicia sesión de nuevo.", variant: "destructive" });
+        console.error("Error: No se pudo obtener la información del usuario. Por favor, inicia sesión de nuevo.");
         navigate('/');
         setLoading(false);
         return;
@@ -138,14 +130,14 @@ const ProfilesPage: React.FC = () => {
         .single();
 
       if (profileError && profileError.code !== 'PGRST116') {
-        toast({ title: "Error", description: "No se pudo obtener el perfil del usuario.", variant: "destructive" });
+        console.error("Error: No se pudo obtener el perfil del usuario.", profileError);
         navigate('/app');
         setLoading(false);
         return;
       }
 
       if (profileData?.role !== 'Administrator') {
-        toast({ title: "Acceso Denegado", description: "No tienes permisos para acceder a esta página.", variant: "destructive" });
+        console.error("Acceso Denegado: No tienes permisos para acceder a esta página.");
         navigate('/app');
       } else {
         setUserRole(profileData.role);
@@ -167,11 +159,11 @@ const ProfilesPage: React.FC = () => {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [navigate, toast, fetchProfiles, fetchFreezers]);
+  }, [navigate, fetchProfiles, fetchFreezers]); // Dependencias actualizadas
 
   const handleEditProfile = async () => {
     if (!editingProfile || !editingProfile.username.trim() || !editingProfile.role.trim()) {
-      toast({ title: "Advertencia", description: "Usuario y Rol no pueden estar vacíos.", variant: "default" });
+      console.warn("Advertencia: Usuario y Rol no pueden estar vacíos.");
       return;
     }
     setLoading(true);
@@ -186,9 +178,9 @@ const ProfilesPage: React.FC = () => {
       .eq('id', editingProfile.id);
 
     if (error) {
-      toast({ title: "Error", description: `Error al actualizar perfil: ${error.message}`, variant: "destructive" });
+      console.error(`Error al actualizar perfil: ${error.message}`, error);
     } else {
-      toast({ title: "Éxito", description: "Perfil actualizado correctamente." });
+      console.log("Éxito: Perfil actualizado correctamente.");
       setEditingProfile(null);
       setIsEditDialogOpen(false);
       fetchProfiles();
@@ -204,9 +196,9 @@ const ProfilesPage: React.FC = () => {
       .eq('id', id);
 
     if (error) {
-      toast({ title: "Error", description: `Error al eliminar perfil: ${error.message}`, variant: "destructive" });
+      console.error(`Error al eliminar perfil: ${error.message}`, error);
     } else {
-      toast({ title: "Éxito", description: "Perfil eliminado correctamente." });
+      console.log("Éxito: Perfil eliminado correctamente.");
       fetchProfiles();
     }
     setLoading(false);

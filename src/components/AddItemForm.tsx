@@ -5,24 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast"; // Using shadcn/ui toast
+// import { useToast } from "@/components/ui/use-toast"; // Eliminado
 
 const AddItemForm = ({ onNewItemAdded }: { onNewItemAdded: () => void }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+  // const { toast } = useToast(); // Eliminado
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     if (!name.trim()) {
-      toast({
-        title: "Error",
-        description: "El nombre del ítem no puede estar vacío.",
-        variant: "destructive",
-      });
+      console.error("Error: El nombre del ítem no puede estar vacío.");
       setLoading(false);
       return;
     }
@@ -35,28 +31,14 @@ const AddItemForm = ({ onNewItemAdded }: { onNewItemAdded: () => void }) => {
 
       if (error) {
         console.error("Error al añadir ítem:", error);
-        toast({
-          title: "Error al añadir ítem",
-          description: error.message,
-          variant: "destructive",
-        });
       } else {
         console.log("Ítem añadido con éxito:", data);
-        toast({
-          title: "Éxito",
-          description: "Ítem añadido correctamente.",
-        });
         setName('');
         setDescription('');
         onNewItemAdded(); // Notify parent component to refresh data
       }
     } catch (err: any) {
       console.error("Error inesperado:", err);
-      toast({
-        title: "Error inesperado",
-        description: err.message,
-        variant: "destructive",
-      });
     } finally {
       setLoading(false);
     }

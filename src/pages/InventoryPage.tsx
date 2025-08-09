@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+// import { useToast } from "@/components/ui/use-toast"; // Eliminado
 import { ArrowLeft, Edit } from "lucide-react";
 import {
   Table,
@@ -49,7 +49,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(initialUserProfile || null); // Initialize with prop
   const [currentFreezerName, setCurrentFreezerName] = useState<string | null>(null);
-  const { toast } = useToast();
+  // const { toast } = useToast(); // Eliminado
   const navigate = useNavigate();
 
   const cardHeaderRef = useRef<HTMLDivElement>(null); 
@@ -97,11 +97,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
     const { data, error } = await query;
 
     if (error) {
-      toast({
-        title: "Error",
-        description: `No se pudo cargar el inventario: ${error.message}`,
-        variant: "destructive",
-      });
+      console.error(`No se pudo cargar el inventario: ${error.message}`, error);
       setInventoryItems([]);
     } else {
       const itemsWithFreezerAndUserName = data.map(item => ({
@@ -112,7 +108,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
       setInventoryItems(itemsWithFreezerAndUserName as InventoryItem[]);
     }
     setLoading(false);
-  }, [toast]);
+  }, []); // Dependencias actualizadas
 
   const fetchFreezerName = useCallback(async (freezerId: string | null) => {
     if (!freezerId) return null;
@@ -123,6 +119,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
       .single();
 
     if (error) {
+      console.error("Error al obtener nombre del congelador:", error);
       return null;
     }
     return data?.name || null;
@@ -137,11 +134,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
         const { data: { user: sessionUser } } = await supabase.auth.getUser();
 
         if (!sessionUser) {
-          toast({
-            title: "Error",
-            description: "No se pudo obtener la información del usuario. Por favor, inicia sesión de nuevo.",
-            variant: "destructive",
-          });
+          console.error("Error: No se pudo obtener la información del usuario. Por favor, inicia sesión de nuevo.");
           navigate('/');
           setLoading(false);
           return;
@@ -154,7 +147,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
           .single();
 
         if (profileError && profileError.code !== 'PGRST116') {
-          toast({ title: "Error", description: "No se pudo obtener el perfil del usuario.", variant: "destructive" });
+          console.error("Error: No se pudo obtener el perfil del usuario.", profileError);
           navigate('/app');
           setLoading(false);
           return;
@@ -174,11 +167,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
       setCurrentFreezerName(name);
 
       if (currentProfile?.role === 'User' && !currentProfile?.current_freezer_id) {
-        toast({
-          title: "Atención",
-          description: "No tienes un congelador seleccionado. Por favor, selecciona uno para ver el inventario.",
-          variant: "default",
-        });
+        console.warn("Atención: No tienes un congelador seleccionado. Por favor, selecciona uno para ver el inventario.");
         navigate('/change-freezer');
         setLoading(false);
         return;
@@ -204,7 +193,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [navigate, toast, fetchInventory, fetchFreezerName, initialUserProfile]);
+  }, [navigate, fetchInventory, fetchFreezerName, initialUserProfile]); // Dependencias actualizadas
 
   const handleEditItem = (itemId: string) => {
     navigate(`/edit-item/${itemId}`);
@@ -224,7 +213,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
 
   const handleBulkStatusChange = async (statusKey: 'solicitado' | 'desfasado' | 'clear', newValue: boolean) => {
     if (selectedItemIds.size === 0) {
-      toast({ title: "Advertencia", description: "Por favor, selecciona al menos un elemento.", variant: "default" });
+      console.warn("Advertencia: Por favor, selecciona al menos un elemento.");
       return;
     }
 
@@ -259,17 +248,10 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
     }
 
     if (successCount > 0) {
-      toast({
-        title: "Éxito",
-        description: `${successCount} elemento(s) actualizado(s) correctamente.`,
-      });
+      console.log(`${successCount} elemento(s) actualizado(s) correctamente.`);
     }
     if (errorCount > 0) {
-      toast({
-        title: "Error",
-        description: `${errorCount} elemento(s) no se pudieron actualizar.`,
-        variant: "destructive",
-      });
+      console.error(`${errorCount} elemento(s) no se pudieron actualizar.`);
     }
 
     setSelectedItemIds(new Set()); // Clear selection

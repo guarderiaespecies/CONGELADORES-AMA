@@ -5,14 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+// import { useToast } from "@/components/ui/use-toast"; // Eliminado
 
 const AuthPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
+  // const { toast } = useToast(); // Eliminado
 
   const handlePostLoginReset = useCallback(async (userId: string) => {
     const { data: profileData, error: profileError } = await supabase
@@ -22,7 +22,7 @@ const AuthPage = () => {
       .single();
 
     if (profileError && profileError.code !== 'PGRST116') {
-      toast({ title: "Error de perfil", description: "No se pudo verificar el perfil para el congelador por defecto.", variant: "destructive" });
+      console.error("Error de perfil: No se pudo verificar el perfil para el congelador por defecto.", profileError);
       return;
     }
 
@@ -34,13 +34,13 @@ const AuthPage = () => {
           .eq('id', userId);
 
         if (updateError) {
-          toast({ title: "Error", description: "No se pudo restablecer el congelador por defecto.", variant: "destructive" });
+          console.error("Error: No se pudo restablecer el congelador por defecto.", updateError);
         } else {
-          toast({ title: "Congelador asignado", description: "Se ha restablecido tu congelador por defecto.", duration: 3000 });
+          console.log("Congelador asignado: Se ha restablecido tu congelador por defecto.");
         }
       }
     }
-  }, [toast]);
+  }, []); // Dependencias vacías ya que toast fue eliminado
 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -62,9 +62,9 @@ const AuthPage = () => {
     setLoading(true);
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      toast({ title: "Error de inicio de sesión", description: error.message, variant: "destructive" });
+      console.error("Error de inicio de sesión:", error);
     } else {
-      toast({ title: "Inicio de sesión exitoso", description: "Bienvenido de nuevo." });
+      console.log("Inicio de sesión exitoso: Bienvenido de nuevo.", data);
     }
     setLoading(false);
   };

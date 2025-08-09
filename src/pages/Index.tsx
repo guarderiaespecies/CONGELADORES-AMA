@@ -3,7 +3,7 @@ import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { supabase } from '@/lib/supabase';
-import { useToast } from "@/components/ui/use-toast";
+// import { useToast } from "@/components/ui/use-toast"; // Eliminado
 import AppHeader from "@/components/AppHeader";
 import InventoryPage from "./InventoryPage";
 
@@ -20,7 +20,7 @@ const Index = () => {
   const [currentFreezerName, setCurrentFreezerName] = useState<string | null>(null);
   const [userProfileState, setUserProfileState] = useState<UserProfile | null>(null);
   const navigate = useNavigate();
-  const { toast } = useToast();
+  // const { toast } = useToast(); // Eliminado
 
   const fetchUserProfile = useCallback(async (userId: string) => {
     const { data: profileData, error: profileError } = await supabase
@@ -30,13 +30,13 @@ const Index = () => {
       .single();
 
     if (profileError && profileError.code !== 'PGRST116') {
-      toast({ title: "Error de perfil", description: profileError.message, variant: "destructive" });
+      console.error("Error de perfil:", profileError);
       return { role: null, freezerId: null, defaultFreezerId: null };
     } else if (profileData) {
       return { role: profileData.role, freezerId: profileData.current_freezer_id, defaultFreezerId: profileData.default_freezer_id };
     }
     return { role: null, freezerId: null, defaultFreezerId: null };
-  }, [toast]);
+  }, []); // Dependencias actualizadas
 
   const fetchFreezerName = useCallback(async (freezerId: string | null) => {
     if (!freezerId) return null;
@@ -47,6 +47,7 @@ const Index = () => {
       .single();
 
     if (error) {
+      console.error("Error al obtener nombre del congelador:", error);
       return null;
     }
     return data?.name || null;
@@ -57,7 +58,7 @@ const Index = () => {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
     if (sessionError) {
-      toast({ title: "Error de sesión", description: sessionError.message, variant: "destructive" });
+      console.error("Error de sesión:", sessionError);
       navigate('/');
       setLoading(false);
       return;
@@ -78,10 +79,10 @@ const Index = () => {
     setCurrentFreezerName(name);
 
     // Set the userProfileState here to pass to InventoryPage
-    setUserProfileState({ role, current_freeizer_id: freezerId });
+    setUserProfileState({ role, current_freezer_id: freezerId });
 
     setLoading(false);
-  }, [navigate, toast, fetchUserProfile, fetchFreezerName]);
+  }, [navigate, fetchUserProfile, fetchFreezerName]); // Dependencias actualizadas
 
   useEffect(() => {
     checkUserAndRole();

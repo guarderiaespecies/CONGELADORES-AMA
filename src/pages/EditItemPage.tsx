@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { useNavigate, useParams } from 'react-router-dom'; // Import useParams
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+// import { useToast } from "@/components/ui/use-toast"; // Eliminado
 import { ArrowLeft, Calendar as CalendarIcon } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -58,7 +58,7 @@ const EditItemPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<string | null>(null); // To check if admin/veterinario can edit
-  const { toast } = useToast();
+  // const { toast } = useToast(); // Eliminado
   const navigate = useNavigate();
 
   const fetchItem = useCallback(async (id: string) => {
@@ -70,11 +70,7 @@ const EditItemPage: React.FC = () => {
       .single();
 
     if (error) {
-      toast({
-        title: "Error",
-        description: `No se pudo cargar el elemento: ${error.message}`,
-        variant: "destructive",
-      });
+      console.error(`No se pudo cargar el elemento: ${error.message}`, error);
       setEditingItem(null);
       navigate('/inventory'); // Go back to inventory list if item not found or error
     } else if (data) {
@@ -90,7 +86,7 @@ const EditItemPage: React.FC = () => {
       });
     }
     setLoading(false);
-  }, [toast, navigate]);
+  }, [navigate]); // Dependencias actualizadas
 
   useEffect(() => {
     const checkUserAndLoadData = async () => {
@@ -98,11 +94,7 @@ const EditItemPage: React.FC = () => {
       const { data: { user: sessionUser } } = await supabase.auth.getUser();
 
       if (!sessionUser) {
-        toast({
-          title: "Error",
-          description: "No se pudo obtener la información del usuario. Por favor, inicia sesión de nuevo.",
-          variant: "destructive",
-        });
+        console.error("Error: No se pudo obtener la información del usuario. Por favor, inicia sesión de nuevo.");
         navigate('/');
         setLoading(false);
         return;
@@ -117,7 +109,7 @@ const EditItemPage: React.FC = () => {
         .single();
 
       if (profileError && profileError.code !== 'PGRST116') {
-        toast({ title: "Error", description: "No se pudo obtener el perfil del usuario.", variant: "destructive" });
+        console.error("Error: No se pudo obtener el perfil del usuario.", profileError);
         navigate('/app');
         setLoading(false);
         return;
@@ -130,7 +122,7 @@ const EditItemPage: React.FC = () => {
           .from('freezers')
           .select('id, name');
         if (freezersError) {
-          toast({ title: "Error", description: "No se pudieron cargar los congeladores.", variant: "destructive" });
+          console.error("Error: No se pudieron cargar los congeladores.", freezersError);
         } else {
           setFreezers(freezersData || []);
         }
@@ -140,11 +132,7 @@ const EditItemPage: React.FC = () => {
         await fetchItem(itemIdParam);
       } else {
         // If no item ID is provided, this page is likely accessed incorrectly
-        toast({
-          title: "Error",
-          description: "No se ha especificado un elemento para modificar.",
-          variant: "destructive",
-        });
+        console.error("Error: No se ha especificado un elemento para modificar.");
         navigate('/inventory'); // Redirect to inventory list
       }
       setLoading(false);
@@ -163,7 +151,7 @@ const EditItemPage: React.FC = () => {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [navigate, toast, fetchItem, itemIdParam]);
+  }, [navigate, fetchItem, itemIdParam]); // Dependencias actualizadas
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
@@ -191,11 +179,11 @@ const EditItemPage: React.FC = () => {
     if (!editingItem) return;
 
     if (!formData.entryDate) {
-      toast({ title: "Error", description: "La fecha de entrada no puede estar vacía.", variant: "destructive" });
+      console.error("Error: La fecha de entrada no puede estar vacía.");
       return;
     }
     if (!formData.species.trim()) {
-      toast({ title: "Error", description: "La especie no puede estar vacía.", variant: "destructive" });
+      console.error("Error: La especie no puede estar vacía.");
       return;
     }
 
@@ -225,24 +213,13 @@ const EditItemPage: React.FC = () => {
         .eq('id', editingItem.id);
 
       if (error) {
-        toast({
-          title: "Error al actualizar elemento",
-          description: error.message,
-          variant: "destructive",
-        });
+        console.error("Error al actualizar elemento:", error);
       } else {
-        toast({
-          title: "Éxito",
-          description: "Elemento actualizado correctamente.",
-        });
+        console.log("Éxito: Elemento actualizado correctamente.");
         navigate('/inventory'); // Go back to inventory list after successful update
       }
     } catch (err: any) {
-      toast({
-        title: "Error inesperado",
-        description: err.message,
-        variant: "destructive",
-      });
+      console.error("Error inesperado:", err);
     } finally {
       setSaving(false);
     }

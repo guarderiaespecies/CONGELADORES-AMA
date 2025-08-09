@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+// import { useToast } from "@/components/ui/use-toast"; // Eliminado
 import { ArrowLeft, Plus, Edit, Trash2 } from "lucide-react";
 import {
   Table,
@@ -49,7 +49,7 @@ const FreezersPage: React.FC = () => {
   const [editingFreezer, setEditingFreezer] = useState<Freezer | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const { toast } = useToast();
+  // const { toast } = useToast(); // Eliminado
   const navigate = useNavigate();
 
   const fetchFreezers = useCallback(async () => {
@@ -60,17 +60,13 @@ const FreezersPage: React.FC = () => {
       .order('name', { ascending: true });
 
     if (error) {
-      toast({
-        title: "Error",
-        description: `No se pudieron cargar los congeladores: ${error.message}`,
-        variant: "destructive",
-      });
+      console.error(`No se pudieron cargar los congeladores: ${error.message}`, error);
       setFreezers([]);
     } else {
       setFreezers(data || []);
     }
     setLoading(false);
-  }, [toast]);
+  }, []); // Dependencias actualizadas
 
   useEffect(() => {
     const checkUserAndLoadData = async () => {
@@ -78,7 +74,7 @@ const FreezersPage: React.FC = () => {
       const { data: { user: sessionUser } } = await supabase.auth.getUser();
 
       if (!sessionUser) {
-        toast({ title: "Error", description: "No se pudo obtener la información del usuario. Por favor, inicia sesión de nuevo.", variant: "destructive" });
+        console.error("Error: No se pudo obtener la información del usuario. Por favor, inicia sesión de nuevo.");
         navigate('/');
         setLoading(false);
         return;
@@ -91,14 +87,14 @@ const FreezersPage: React.FC = () => {
         .single();
 
       if (profileError && profileError.code !== 'PGRST116') {
-        toast({ title: "Error", description: "No se pudo obtener el perfil del usuario.", variant: "destructive" });
+        console.error("Error: No se pudo obtener el perfil del usuario.", profileError);
         navigate('/app');
         setLoading(false);
         return;
       }
 
       if (profileData?.role !== 'Administrator') {
-        toast({ title: "Acceso Denegado", description: "No tienes permisos para acceder a esta página.", variant: "destructive" });
+        console.error("Acceso Denegado: No tienes permisos para acceder a esta página.");
         navigate('/app');
       } else {
         setUserRole(profileData.role);
@@ -119,11 +115,11 @@ const FreezersPage: React.FC = () => {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [navigate, toast, fetchFreezers]);
+  }, [navigate, fetchFreezers]); // Dependencias actualizadas
 
   const handleAddFreezer = async () => {
     if (!newFreezerName.trim()) {
-      toast({ title: "Advertencia", description: "El nombre del congelador no puede estar vacío.", variant: "default" });
+      console.warn("Advertencia: El nombre del congelador no puede estar vacío.");
       return;
     }
     setLoading(true);
@@ -132,9 +128,9 @@ const FreezersPage: React.FC = () => {
       .insert([{ name: newFreezerName.trim() }]);
 
     if (error) {
-      toast({ title: "Error", description: `Error al añadir congelador: ${error.message}`, variant: "destructive" });
+      console.error(`Error al añadir congelador: ${error.message}`, error);
     } else {
-      toast({ title: "Éxito", description: "Congelador añadido correctamente." });
+      console.log("Éxito: Congelador añadido correctamente.");
       setNewFreezerName('');
       setIsAddDialogOpen(false);
       fetchFreezers();
@@ -144,7 +140,7 @@ const FreezersPage: React.FC = () => {
 
   const handleEditFreezer = async () => {
     if (!editingFreezer || !editingFreezer.name.trim()) {
-      toast({ title: "Advertencia", description: "El nombre del congelador no puede estar vacío.", variant: "default" });
+      console.warn("Advertencia: El nombre del congelador no puede estar vacío.");
       return;
     }
     setLoading(true);
@@ -154,9 +150,9 @@ const FreezersPage: React.FC = () => {
       .eq('id', editingFreezer.id);
 
     if (error) {
-      toast({ title: "Error", description: `Error al actualizar congelador: ${error.message}`, variant: "destructive" });
+      console.error(`Error al actualizar congelador: ${error.message}`, error);
     } else {
-      toast({ title: "Éxito", description: "Congelador actualizado correctamente." });
+      console.log("Éxito: Congelador actualizado correctamente.");
       setEditingFreezer(null);
       setIsEditDialogOpen(false);
       fetchFreezers();
@@ -172,9 +168,9 @@ const FreezersPage: React.FC = () => {
       .eq('id', id);
 
     if (error) {
-      toast({ title: "Error", description: `Error al eliminar congelador: ${error.message}`, variant: "destructive" });
+      console.error(`Error al eliminar congelador: ${error.message}`, error);
     } else {
-      toast({ title: "Éxito", description: "Congelador eliminado correctamente." });
+      console.log("Éxito: Congelador eliminado correctamente.");
       fetchFreezers();
     }
     setLoading(false);

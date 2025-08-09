@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+// import { useToast } from "@/components/ui/use-toast"; // Eliminado
 import { Calendar as CalendarIcon, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -23,7 +23,7 @@ const AddItemPage: React.FC = () => {
   const [pageLoading, setPageLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [currentFreezerId, setCurrentFreezerId] = useState<string | null>(null);
-  const { toast } = useToast();
+  // const { toast } = useToast(); // Eliminado
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -39,72 +39,48 @@ const AddItemPage: React.FC = () => {
           .single();
 
         if (profileError && profileError.code !== 'PGRST116') {
-          toast({ title: "Error", description: "No se pudo obtener el congelador actual del usuario.", variant: "destructive" });
+          console.error("Error: No se pudo obtener el congelador actual del usuario.", profileError);
           navigate('/app');
         } else if (profileData) {
           setCurrentFreezerId(profileData.current_freezer_id);
           if (!profileData.current_freezer_id) {
-            toast({
-              title: "Atención",
-              description: "No tienes un congelador seleccionado. Por favor, selecciona uno antes de añadir elementos.",
-              variant: "default",
-            });
+            console.warn("Atención: No tienes un congelador seleccionado. Por favor, selecciona uno antes de añadir elementos.");
             navigate('/change-freezer');
           }
         }
       } else {
-        toast({
-          title: "Error",
-          description: "No se pudo obtener la información del usuario. Por favor, inicia sesión de nuevo.",
-          variant: "destructive",
-        });
+        console.error("Error: No se pudo obtener la información del usuario. Por favor, inicia sesión de nuevo.");
         navigate('/');
       }
       setPageLoading(false);
     };
     fetchData();
-  }, [toast, navigate]);
+  }, [navigate]); // Dependencias actualizadas
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     if (!user) {
-      toast({
-        title: "Error",
-        description: "Usuario no autenticado. Por favor, inicia sesión.",
-        variant: "destructive",
-      });
+      console.error("Error: Usuario no autenticado. Por favor, inicia sesión.");
       setLoading(false);
       return;
     }
 
     if (!currentFreezerId) {
-      toast({
-        title: "Error",
-        description: "No hay un congelador seleccionado. Por favor, selecciona uno.",
-        variant: "destructive",
-      });
+      console.error("Error: No hay un congelador seleccionado. Por favor, selecciona uno.");
       setLoading(false);
       return;
     }
 
     if (!entryDate) {
-      toast({
-        title: "Error",
-        description: "La fecha de entrada no puede estar vacía.",
-        variant: "destructive",
-      });
+      console.error("Error: La fecha de entrada no puede estar vacía.");
       setLoading(false);
       return;
     }
 
     if (!species.trim()) {
-      toast({
-        title: "Error",
-        description: "La especie no puede estar vacía.",
-        variant: "destructive",
-      });
+      console.error("Error: La especie no puede estar vacía.");
       setLoading(false);
       return;
     }
@@ -128,16 +104,9 @@ const AddItemPage: React.FC = () => {
         .select();
 
       if (error) {
-        toast({
-          title: "Error al añadir ítem",
-          description: error.message,
-          variant: "destructive",
-        });
+        console.error("Error al añadir ítem:", error);
       } else {
-        toast({
-          title: "Éxito",
-          description: "Ítem añadido correctamente.",
-        });
+        console.log("Éxito: Ítem añadido correctamente.", data);
         // Eliminado: sessionStorage.setItem('hasMadeChanges', 'true'); // Activar el botón Modificar
         setEntryDate(new Date());
         setSealNo('');
@@ -146,11 +115,7 @@ const AddItemPage: React.FC = () => {
         navigate('/app');
       }
     } catch (err: any) {
-      toast({
-        title: "Error inesperado",
-        description: err.message,
-        variant: "destructive",
-      });
+      console.error("Error inesperado:", err);
     } finally {
       setLoading(false);
     }

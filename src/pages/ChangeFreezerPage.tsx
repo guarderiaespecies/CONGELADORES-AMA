@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+// import { useToast } from "@/components/ui/use-toast"; // Eliminado
 import AppHeader from "@/components/AppHeader"; // Import the reusable header
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -23,7 +23,7 @@ const ChangeFreezerPage: React.FC = () => {
   const [currentFreezerId, setCurrentFreezerId] = useState<string | null>(null);
   const [currentFreezerName, setCurrentFreezerName] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { toast } = useToast();
+  // const { toast } = useToast(); // Eliminado
 
   const fetchUserProfile = useCallback(async (userId: string) => {
     const { data: profileData, error: profileError } = await supabase
@@ -33,13 +33,13 @@ const ChangeFreezerPage: React.FC = () => {
       .single();
 
     if (profileError && profileError.code !== 'PGRST116') {
-      toast({ title: "Error de perfil", description: profileError.message, variant: "destructive" });
+      console.error("Error de perfil:", profileError);
       return { role: null, freezerId: null };
     } else if (profileData) {
       return { role: profileData.role, freezerId: profileData.current_freezer_id };
     }
     return { role: null, freezerId: null };
-  }, [toast]);
+  }, []); // Dependencias vacías ya que toast fue eliminado
 
   const fetchFreezerName = useCallback(async (freezerId: string | null) => {
     if (!freezerId) return null;
@@ -50,6 +50,7 @@ const ChangeFreezerPage: React.FC = () => {
       .single();
 
     if (error) {
+      console.error("Error al obtener nombre del congelador:", error);
       return null;
     }
     return data?.name || null;
@@ -60,7 +61,7 @@ const ChangeFreezerPage: React.FC = () => {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
     if (sessionError) {
-      toast({ title: "Error de sesión", description: sessionError.message, variant: "destructive" });
+      console.error("Error de sesión:", sessionError);
       navigate('/');
       setLoading(false);
       return;
@@ -87,16 +88,12 @@ const ChangeFreezerPage: React.FC = () => {
       .select('id, name');
 
     if (freezersError) {
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los congeladores.",
-        variant: "destructive",
-      });
+      console.error("Error: No se pudieron cargar los congeladores.", freezersError);
     } else {
       setFreezers(freezersData || []);
     }
     setLoading(false);
-  }, [navigate, toast, fetchUserProfile, fetchFreezerName]);
+  }, [navigate, fetchUserProfile, fetchFreezerName]); // Dependencias actualizadas
 
   useEffect(() => {
     checkUserAndLoadData();
@@ -126,16 +123,9 @@ const ChangeFreezerPage: React.FC = () => {
       .eq('id', user.id);
 
     if (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar el congelador asociado.",
-        variant: "destructive",
-      });
+      console.error("Error: No se pudo actualizar el congelador asociado.", error);
     } else {
-      toast({
-        title: "Éxito",
-        description: "Congelador asociado actualizado correctamente.",
-      });
+      console.log("Éxito: Congelador asociado actualizado correctamente.");
       navigate('/app'); // Go back to the main app page
     }
     setLoading(false);

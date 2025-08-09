@@ -2,13 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+// import { useToast } from "@/components/ui/use-toast"; // Eliminado
 import { supabase } from '@/lib/supabase';
 import { ArrowLeft } from 'lucide-react';
 
 const AdminSettingsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  // const { toast } = useToast(); // Eliminado
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
 
@@ -18,7 +18,7 @@ const AdminSettingsPage: React.FC = () => {
       const { data: { user: sessionUser } } = await supabase.auth.getUser();
 
       if (!sessionUser) {
-        toast({ title: "Error", description: "No se pudo obtener la información del usuario. Por favor, inicia sesión de nuevo.", variant: "destructive" });
+        console.error("Error: No se pudo obtener la información del usuario. Por favor, inicia sesión de nuevo.");
         navigate('/');
         setLoading(false);
         return;
@@ -31,14 +31,14 @@ const AdminSettingsPage: React.FC = () => {
         .single();
 
       if (profileError && profileError.code !== 'PGRST116') {
-        toast({ title: "Error", description: "No se pudo obtener el perfil del usuario.", variant: "destructive" });
+        console.error("Error: No se pudo obtener el perfil del usuario.", profileError);
         navigate('/app');
         setLoading(false);
         return;
       }
 
       if (profileData?.role !== 'Administrator') {
-        toast({ title: "Acceso Denegado", description: "No tienes permisos para acceder a esta página.", variant: "destructive" });
+        console.error("Acceso Denegado: No tienes permisos para acceder a esta página.");
         navigate('/app');
       } else {
         setUserRole(profileData.role);
@@ -59,7 +59,7 @@ const AdminSettingsPage: React.FC = () => {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [navigate, toast]);
+  }, [navigate]); // Dependencias actualizadas
 
   if (loading) {
     return (

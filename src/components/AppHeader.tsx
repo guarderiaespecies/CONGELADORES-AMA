@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { supabase } from '@/lib/supabase';
-import { useToast } from "@/components/ui/use-toast";
+// import { useToast } from "@/components/ui/use-toast"; // Eliminado
 import { X, Settings } from 'lucide-react'; // Importar los iconos X y Settings
 
 interface AppHeaderProps {
@@ -14,15 +14,14 @@ interface AppHeaderProps {
 
 const AppHeader: React.FC<AppHeaderProps> = ({ userEmail, userRole, currentFreezerName }) => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  // const { toast } = useToast(); // Eliminado
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.error("Error al cerrar sesión:", error);
-      toast({ title: "Error al cerrar sesión", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Sesión cerrada", description: "Has cerrado sesión correctamente." });
+      console.log("Sesión cerrada correctamente.");
       navigate('/');
     }
   };
