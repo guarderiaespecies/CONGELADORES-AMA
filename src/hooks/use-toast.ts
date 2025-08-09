@@ -3,7 +3,7 @@ import * as React from "react";
 import type { ToastActionElement, ToastProps } from "@/components/ui/toast";
 
 const TOAST_LIMIT = 1;
-const TOAST_REMOVE_DELAY = 2000; // Cambiado de 1000000 a 2000 (2 segundos)
+const TOAST_REMOVE_DELAY = 700; // Cambiado de 2000 a 700 (0.7 segundos)
 
 type ToasterToast = ToastProps & {
   id: string;
@@ -76,7 +76,7 @@ export const reducer = (state: State, action: Action): State => {
         toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
       };
 
-    case "UPDATE_TOAST":
+    case "UPDATE_TOasts":
       return {
         ...state,
         toasts: state.toasts.map((t) =>

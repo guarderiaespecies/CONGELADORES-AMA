@@ -30,7 +30,8 @@ interface InventoryItem {
   status_solicitado: boolean;
   status_desfasado: boolean;
   freezer_name?: string;
-  created_by_user_email?: string;
+  created_by_user_email?: string; // Keeping for potential debug/future use
+  created_by_username?: string; // New field for username
 }
 
 interface UserProfile {
@@ -104,19 +105,20 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
       setInventoryItems([]);
     } else {
       const uniqueUserIds = Array.from(new Set(data.map(item => item.created_by_user_id)));
-      let userEmailsMap = new Map<string, string>();
+      // Change this map to store objects with email and username
+      let userDetailsMap = new Map<string, { email: string; username: string }>();
 
       if (uniqueUserIds.length > 0) {
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
-          .select('id, email')
+          .select('id, email, username') // Fetch username here
           .in('id', uniqueUserIds);
 
         if (profilesError) {
-          console.error("Error fetching user profiles for emails:", profilesError);
+          console.error("Error fetching user profiles for emails/usernames:", profilesError);
         } else {
           profilesData.forEach(profile => {
-            userEmailsMap.set(profile.id, profile.email);
+            userDetailsMap.set(profile.id, { email: profile.email, username: profile.username });
           });
         }
       }
@@ -124,7 +126,8 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
       const itemsWithFreezerAndUserName = data.map(item => ({
         ...item,
         freezer_name: item.freezers?.name || 'Desconocido',
-        created_by_user_email: userEmailsMap.get(item.created_by_user_id) || 'Desconocido'
+        created_by_user_email: userDetailsMap.get(item.created_by_user_id)?.email || 'Desconocido',
+        created_by_username: userDetailsMap.get(item.created_by_user_id)?.username || 'Desconocido' // New field for username
       }));
       setInventoryItems(itemsWithFreezerAndUserName as InventoryItem[]);
     }
@@ -421,7 +424,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
                     <TableCell className="min-w-[150px]">{item.observations || '-'}</TableCell>
                     {showAdminOnlyColumns && (
                       <>
-                        <TableCell className="w-[120px]">{item.created_by_user_email}</TableCell>
+                        <TableCell className="w-[120px]">{item.created_by_username}</TableCell> {/* Display username */}
                         <TableCell className="w-[150px]">{format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: es })}</TableCell>
                       </>
                     )}
