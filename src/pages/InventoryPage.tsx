@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { ArrowLeft, Check, X, Edit } from "lucide-react";
+import { ArrowLeft, Edit } from "lucide-react"; // Removed Check, X as they are no longer in table
 import {
   Table,
   TableBody,
@@ -16,7 +16,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { es } from 'date-fns/locale';
-import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 interface InventoryItem {
@@ -46,6 +45,7 @@ interface InventoryPageProps {
 
 const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initialUserProfile }) => {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set()); // State for selected rows
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(initialUserProfile || null); // Initialize with prop
   const [currentFreezerName, setCurrentFreezerName] = useState<string | null>(null);
@@ -89,7 +89,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
 
     // Order by freezer name ascending, then by entry date descending (most recent first)
     query = query
-      .order('name', { ascending: true, foreignTable: 'freezers' }) // Corrected ordering for foreign table
+      .order('name', { ascending: true, foreignTable: 'freezers' }) 
       .order('entry_date', { ascending: false });
 
     const { data, error } = await query;
@@ -147,9 +147,9 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
   useEffect(() => {
     const checkUserAndLoadData = async () => {
       setLoading(true);
-      let currentProfile: UserProfile | null = initialUserProfile || null; // Use the prop if available
+      let currentProfile: UserProfile | null = initialUserProfile || null; 
 
-      if (!currentProfile) { // If prop not provided, fetch it
+      if (!currentProfile) { 
         const { data: { user: sessionUser } } = await supabase.auth.getUser();
 
         if (!sessionUser) {
@@ -181,7 +181,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
         };
       }
       
-      setUserProfile(currentProfile); // Update state with the determined profile
+      setUserProfile(currentProfile); 
 
       console.log("DEBUG: InventoryPage - User Profile Role:", currentProfile?.role);
       console.log("DEBUG: InventoryPage - User Profile Current Freezer ID:", currentProfile?.current_freezer_id);
@@ -195,7 +195,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
           description: "No tienes un congelador seleccionado. Por favor, selecciona uno para ver el inventario.",
           variant: "default",
         });
-        navigate('/change-freeizer');
+        navigate('/change-freezer');
         setLoading(false);
         return;
       }
@@ -213,7 +213,6 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
       if (!session) {
         navigate('/');
       } else {
-        // Re-run checkUserAndLoadData to get the latest profile based on new session
         checkUserAndLoadData();
       }
     });
@@ -227,55 +226,80 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
     navigate(`/edit-item/${itemId}`);
   };
 
-  const handleStatusChange = async (itemId: string, statusKey: 'status_solicitado' | 'status_desfasado', newValue: boolean) => {
-    setLoading(true);
-    try {
-      const { error } = await supabase
-        .from('inventory')
-        .update({ [statusKey]: newValue })
-        .eq('id', itemId);
-
-      if (error) {
-        toast({
-          title: "Error al actualizar estado",
-          description: error.message,
-          variant: "destructive",
-        });
+  const handleRowClick = (itemId: string) => {
+    setSelectedItemIds(prevSelected => {
+      const newSelected = new Set(prevSelected);
+      if (newSelected.has(itemId)) {
+        newSelected.delete(itemId);
       } else {
-        toast({
-          title: "Éxito",
-          description: "Estado actualizado correctamente.",
-        });
-        if (userProfile) {
-          await fetchInventory(userProfile);
-        }
+        newSelected.add(itemId);
       }
-    } catch (err: any) {
+      return newSelected;
+    });
+  };
+
+  const handleBulkStatusChange = async (statusKey: 'solicitado' | 'desfasado', newValue: boolean) => {
+    if (selectedItemIds.size === 0) {
+      toast({ title: "Advertencia", description: "Por favor, selecciona al menos un elemento.", variant: "default" });
+      return;
+    }
+
+    setLoading(true);
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const itemId of Array.from(selectedItemIds)) {
+      try {
+        const { error } = await supabase
+          .from('inventory')
+          .update({ [`status_${statusKey}`]: newValue })
+          .eq('id', itemId);
+
+        if (error) {
+          console.error(`Error updating item ${itemId}:`, error);
+          errorCount++;
+        } else {
+          successCount++;
+        }
+      } catch (err) {
+        console.error(`Unexpected error updating item ${itemId}:`, err);
+        errorCount++;
+      }
+    }
+
+    if (successCount > 0) {
       toast({
-        title: "Error inesperado",
-        description: err.message,
+        title: "Éxito",
+        description: `${successCount} elemento(s) actualizado(s) correctamente.`,
+      });
+    }
+    if (errorCount > 0) {
+      toast({
+        title: "Error",
+        description: `${errorCount} elemento(s) no se pudieron actualizar.`,
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
+
+    setSelectedItemIds(new Set()); // Clear selection
+    if (userProfile) {
+      await fetchInventory(userProfile); // Refresh the list
+    }
+    setLoading(false);
   };
 
   const getRowClasses = (item: InventoryItem) => {
+    const classes = [];
     if (item.status_desfasado) {
-      return "bg-red-100";
+      classes.push("bg-red-100");
     }
     if (item.status_solicitado) {
-      return "bg-green-100";
+      classes.push("bg-green-100");
     }
-    return "";
-  };
-
-  const getIconColorClass = (item: InventoryItem) => {
-    if (item.status_solicitado || item.status_desfasado) {
-      return "text-white";
+    if (selectedItemIds.has(item.id)) {
+      classes.push("bg-blue-100 border-blue-300"); // Highlight selected row
     }
-    return "";
+    return cn(classes);
   };
 
   if (loading) {
@@ -292,15 +316,14 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
   }
 
   // Determine if the "Congelador" column should be shown
-  // It should be shown if the user is Admin/Veterinary AND they are NOT currently filtered by a specific freezer.
   const showFreezerColumn = (userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary') && !userProfile?.current_freezer_id;
   const showAdminColumns = userProfile?.role === 'Administrator';
   const canEditStatus = userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary';
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
-      <Card className={cn("w-full max-w-full mx-auto shadow-lg", !hideHeader && "mt-8")}> {/* Conditionally apply mt-8 */}
-        {!hideHeader && ( // Conditionally render CardHeader
+      <Card className={cn("w-full max-w-full mx-auto shadow-lg", !hideHeader && "mt-8")}>
+        {!hideHeader && (
           <CardHeader ref={cardHeaderRef} className="sticky top-0 bg-card z-20 pb-4">
             <CardTitle className="text-center">
               {userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary' ?
@@ -322,16 +345,33 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
         )}
 
         <CardContent className="p-0 overflow-x-auto pt-4">
+          {canEditStatus && (
+            <div className="flex justify-center space-x-4 mb-4 px-4">
+              <Button
+                onClick={() => handleBulkStatusChange('solicitado', true)}
+                className="bg-green-600 hover:bg-green-700 text-white"
+                disabled={selectedItemIds.size === 0 || loading}
+              >
+                Solicitar ({selectedItemIds.size})
+              </Button>
+              <Button
+                onClick={() => handleBulkStatusChange('desfasado', true)}
+                className="bg-red-600 hover:bg-red-700 text-white"
+                disabled={selectedItemIds.size === 0 || loading}
+              >
+                Desfasado ({selectedItemIds.size})
+              </Button>
+            </div>
+          )}
+
           {inventoryItems.length === 0 ? (
             <p className="text-center text-gray-500 p-4">No hay elementos en el inventario de este congelador.</p>
           ) : (
             <Table>
               <TableHeader className="bg-card z-10">
                 <TableRow>
-                  <TableHead className="w-[60px] text-center">Solicitado</TableHead>
-                  <TableHead className="w-[60px] text-center">Desfasado</TableHead>
                   {showFreezerColumn && <TableHead className="w-[120px]">Congelador</TableHead>}
-                  <TableHead className="w-[100px]">Fecha</TableHead> {/* Moved Fecha here */}
+                  <TableHead className="w-[100px]">Fecha</TableHead>
                   <TableHead className="w-[100px]">Precinto</TableHead>
                   <TableHead className="w-[120px]">Especie</TableHead>
                   <TableHead className="min-w-[150px]">Observaciones</TableHead>
@@ -346,38 +386,22 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
               </TableHeader>
               <TableBody>
                 {inventoryItems.map((item) => (
-                  <TableRow key={item.id} className={getRowClasses(item)}>
-                    <TableCell className="w-[60px] text-center">
-                      {canEditStatus ? (
-                        <Switch
-                          checked={item.status_solicitado}
-                          onCheckedChange={(checked) => handleStatusChange(item.id, 'status_solicitado', checked)}
-                        />
-                      ) : (
-                        item.status_solicitado ? <Check className={cn("h-5 w-5 mx-auto", getIconColorClass(item))} /> : ''
-                      )}
-                    </TableCell>
-                    <TableCell className="w-[60px] text-center">
-                      {canEditStatus ? (
-                        <Switch
-                          checked={item.status_desfasado}
-                          onCheckedChange={(checked) => handleStatusChange(item.id, 'status_desfasado', checked)}
-                        />
-                      ) : (
-                        item.status_desfasado ? <X className={cn("h-5 w-5 mx-auto", getIconColorClass(item))} /> : ''
-                      )}
-                    </TableCell>
+                  <TableRow
+                    key={item.id}
+                    className={getRowClasses(item)}
+                    onClick={() => handleRowClick(item.id)}
+                  >
                     {showFreezerColumn && <TableCell className="w-[120px]">{item.freezer_name}</TableCell>}
-                    <TableCell className="w-[100px]">{format(new Date(item.entry_date), "dd/MM/yyyy", { locale: es })}</TableCell> {/* Moved Fecha here */}
+                    <TableCell className="w-[100px]">{format(new Date(item.entry_date), "dd/MM/yyyy", { locale: es })}</TableCell>
                     <TableCell className="w-[100px]">{item.seal_no || '-'}</TableCell>
                     <TableCell className="w-[120px]">{item.species}</TableCell>
                     <TableCell className="min-w-[150px]">{item.observations || '-'}</TableCell>
-                    {showAdminColumns ? ( // Only show these columns for Administrator
+                    {showAdminColumns ? (
                       <>
                         <TableCell className="w-[120px]">{item.created_by_user_email}</TableCell>
                         <TableCell className="w-[150px]">{format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: es })}</TableCell>
                         <TableCell className="w-[80px] text-center">
-                          <Button variant="ghost" size="icon" onClick={() => handleEditItem(item.id)}>
+                          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEditItem(item.id); }}>
                             <Edit className="h-4 w-4" />
                             <span className="sr-only">Editar</span>
                           </Button>
