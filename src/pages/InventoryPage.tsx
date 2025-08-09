@@ -269,9 +269,9 @@ const InventoryPage: React.FC = () => {
           {inventoryItems.length === 0 ? (
             <p className="text-center text-gray-500 p-4">No hay elementos en el inventario de este congelador.</p>
           ) : (
-            <div className="overflow-x-auto max-h-[calc(100vh-250px)] overflow-y-auto"> {/* Wrapper for scroll */}
+            <div className="overflow-x-auto"> {/* Only horizontal scroll here */}
               <Table>
-                <TableHeader className="sticky top-0 bg-background z-10"> {/* Sticky header */}
+                <TableHeader className="sticky top-0 bg-background z-10"> {/* Sticky header relative to viewport */}
                   <TableRow>
                     {showFreezerColumn && <TableHead className="w-[120px]">Congelador</TableHead>}
                     <TableHead className="w-[100px]">Precinto</TableHead>
