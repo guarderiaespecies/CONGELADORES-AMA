@@ -43,6 +43,7 @@ const InventoryPage: React.FC = () => {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [currentFreezerName, setCurrentFreezerName] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -113,6 +114,20 @@ const InventoryPage: React.FC = () => {
     setLoading(false);
   }, [toast]);
 
+  const fetchFreezerName = useCallback(async (freezerId: string | null) => {
+    if (!freezerId) return null;
+    const { data, error } = await supabase
+      .from('freezers')
+      .select('name')
+      .eq('id', freezerId)
+      .single();
+
+    if (error) {
+      return null;
+    }
+    return data?.name || null;
+  }, []);
+
   useEffect(() => {
     const checkUserAndLoadData = async () => {
       setLoading(true);
@@ -148,6 +163,10 @@ const InventoryPage: React.FC = () => {
       };
       setUserProfile(profile);
 
+      // Fetch freezer name for the title
+      const name = await fetchFreezerName(profile.current_freezer_id);
+      setCurrentFreezerName(name);
+
       if (profile.role === 'User' && !profile.current_freezer_id) {
         toast({
           title: "Atención",
@@ -175,7 +194,7 @@ const InventoryPage: React.FC = () => {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [navigate, toast, fetchInventory]);
+  }, [navigate, toast, fetchInventory, fetchFreezerName]);
 
   const handleEditItem = (itemId: string) => {
     navigate(`/edit-item/${itemId}`);
@@ -252,9 +271,15 @@ const InventoryPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
-      <Card className="w-full max-w-4xl mx-auto mt-8 shadow-lg relative">
-        <CardHeader>
-          <CardTitle className="text-center">Inventario del Congelador</CardTitle>
+      <Card className="w-full max-w-4xl mx-auto mt-8 shadow-lg relative max-h-[calc(100vh-64px)] overflow-y-auto"> {/* Card is now scrollable */}
+        <CardHeader className="sticky top-0 bg-background z-20"> {/* CardHeader is sticky within the Card */}
+          <CardTitle className="text-center">
+            {userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinario' ?
+              (currentFreezerName ? `Inventario del Congelador: ${currentFreezerName}` : 'Inventario de los Congeladores')
+              :
+              (currentFreezerName ? `Inventario del Congelador: ${currentFreezerName}` : 'Inventario del Congelador')
+            }
+          </CardTitle>
           <Button
             variant="ghost"
             size="icon"
@@ -265,75 +290,73 @@ const InventoryPage: React.FC = () => {
             <span className="sr-only">Volver</span>
           </Button>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-x-auto"> {/* CardContent only needs horizontal scroll */}
           {inventoryItems.length === 0 ? (
             <p className="text-center text-gray-500 p-4">No hay elementos en el inventario de este congelador.</p>
           ) : (
-            <div className="overflow-x-auto"> {/* Only horizontal scroll here */}
-              <Table>
-                <TableHeader className="sticky top-0 bg-background z-10"> {/* Sticky header relative to viewport */}
-                  <TableRow>
-                    {showFreezerColumn && <TableHead className="w-[120px]">Congelador</TableHead>}
-                    <TableHead className="w-[100px]">Precinto</TableHead>
-                    <TableHead className="w-[120px]">Especie</TableHead>
-                    <TableHead className="w-[100px]">Fecha</TableHead>
-                    <TableHead>Observaciones</TableHead>
+            <Table>
+              <TableHeader className="sticky top-0 bg-background z-10"> {/* TableHeader is sticky within CardContent */}
+                <TableRow>
+                  {showFreezerColumn && <TableHead className="w-[120px]">Congelador</TableHead>}
+                  <TableHead className="w-[100px]">Precinto</TableHead>
+                  <TableHead className="w-[120px]">Especie</TableHead>
+                  <TableHead className="w-[100px]">Fecha</TableHead>
+                  <TableHead>Observaciones</TableHead>
+                  {showAdminColumns && (
+                    <>
+                      <TableHead className="w-[120px]">Creado Por</TableHead>
+                      <TableHead className="w-[150px]">Fecha Creación</TableHead>
+                      <TableHead className="w-[80px] text-center">Acciones</TableHead>
+                    </>
+                  )}
+                  <TableHead className="w-[60px] text-center">Solicitado</TableHead>
+                  <TableHead className="w-[60px] text-center">Desfasado</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {inventoryItems.map((item) => (
+                  <TableRow key={item.id} className={getRowClasses(item)}>
+                    {showFreezerColumn && <TableCell>{item.freezer_name}</TableCell>}
+                    <TableCell>{item.seal_no || '-'}</TableCell>
+                    <TableCell>{item.species}</TableCell>
+                    <TableCell>{format(new Date(item.entry_date), "dd/MM/yyyy", { locale: es })}</TableCell>
+                    <TableCell>{item.observations || '-'}</TableCell>
                     {showAdminColumns && (
                       <>
-                        <TableHead className="w-[120px]">Creado Por</TableHead>
-                        <TableHead className="w-[150px]">Fecha Creación</TableHead>
-                        <TableHead className="w-[80px] text-center">Acciones</TableHead>
+                        <TableCell>{item.created_by_user_email}</TableCell>
+                        <TableCell>{format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: es })}</TableCell>
+                        <TableCell className="text-center">
+                          <Button variant="ghost" size="icon" onClick={() => handleEditItem(item.id)}>
+                            <Edit className="h-4 w-4" />
+                            <span className="sr-only">Editar</span>
+                          </Button>
+                        </TableCell>
                       </>
                     )}
-                    <TableHead className="w-[60px] text-center">Solicitado</TableHead>
-                    <TableHead className="w-[60px] text-center">Desfasado</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {inventoryItems.map((item) => (
-                    <TableRow key={item.id} className={getRowClasses(item)}>
-                      {showFreezerColumn && <TableCell>{item.freezer_name}</TableCell>}
-                      <TableCell>{item.seal_no || '-'}</TableCell>
-                      <TableCell>{item.species}</TableCell>
-                      <TableCell>{format(new Date(item.entry_date), "dd/MM/yyyy", { locale: es })}</TableCell>
-                      <TableCell>{item.observations || '-'}</TableCell>
-                      {showAdminColumns && (
-                        <>
-                          <TableCell>{item.created_by_user_email}</TableCell>
-                          <TableCell>{format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: es })}</TableCell>
-                          <TableCell className="text-center">
-                            <Button variant="ghost" size="icon" onClick={() => handleEditItem(item.id)}>
-                              <Edit className="h-4 w-4" />
-                              <span className="sr-only">Editar</span>
-                            </Button>
-                          </TableCell>
-                        </>
+                    <TableCell className="text-center">
+                      {canEditStatus ? (
+                        <Switch
+                          checked={item.status_solicitado}
+                          onCheckedChange={(checked) => handleStatusChange(item.id, 'status_solicitado', checked)}
+                        />
+                      ) : (
+                        item.status_solicitado ? <Check className={cn("h-5 w-5 mx-auto", getIconColorClass(item))} /> : ''
                       )}
-                      <TableCell className="text-center">
-                        {canEditStatus ? (
-                          <Switch
-                            checked={item.status_solicitado}
-                            onCheckedChange={(checked) => handleStatusChange(item.id, 'status_solicitado', checked)}
-                          />
-                        ) : (
-                          item.status_solicitado ? <Check className={cn("h-5 w-5 mx-auto", getIconColorClass(item))} /> : ''
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {canEditStatus ? (
-                          <Switch
-                            checked={item.status_desfasado}
-                            onCheckedChange={(checked) => handleStatusChange(item.id, 'status_desfasado', checked)}
-                          />
-                        ) : (
-                          item.status_desfasado ? <X className={cn("h-5 w-5 mx-auto", getIconColorClass(item))} /> : ''
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {canEditStatus ? (
+                        <Switch
+                          checked={item.status_desfasado}
+                          onCheckedChange={(checked) => handleStatusChange(item.id, 'status_desfasado', checked)}
+                        />
+                      ) : (
+                        item.status_desfasado ? <X className={cn("h-5 w-5 mx-auto", getIconColorClass(item))} /> : ''
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
