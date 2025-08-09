@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { ArrowLeft, Edit } from "lucide-react"; // Removed Check, X as they are no longer in table
+import { ArrowLeft, Edit } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -238,7 +238,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
     });
   };
 
-  const handleBulkStatusChange = async (statusKey: 'solicitado' | 'desfasado', newValue: boolean) => {
+  const handleBulkStatusChange = async (statusKey: 'solicitado' | 'desfasado' | 'clear', newValue: boolean) => {
     if (selectedItemIds.size === 0) {
       toast({ title: "Advertencia", description: "Por favor, selecciona al menos un elemento.", variant: "default" });
       return;
@@ -250,9 +250,16 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
 
     for (const itemId of Array.from(selectedItemIds)) {
       try {
+        let updatePayload: Partial<InventoryItem> = {};
+        if (statusKey === 'clear') {
+          updatePayload = { status_solicitado: false, status_desfasado: false };
+        } else {
+          updatePayload = { [`status_${statusKey}`]: newValue };
+        }
+
         const { error } = await supabase
           .from('inventory')
-          .update({ [`status_${statusKey}`]: newValue })
+          .update(updatePayload)
           .eq('id', itemId);
 
         if (error) {
@@ -289,17 +296,22 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
   };
 
   const getRowClasses = (item: InventoryItem) => {
-    const classes = [];
+    // Base classes for all rows, including a default hover effect
+    let classes = "hover:bg-gray-100";
+
+    // Apply status-based background colors and their specific hover effects
     if (item.status_desfasado) {
-      classes.push("bg-red-100");
+      classes = cn(classes, "bg-red-100 hover:bg-red-200");
+    } else if (item.status_solicitado) {
+      classes = cn(classes, "bg-green-100 hover:bg-green-200");
     }
-    if (item.status_solicitado) {
-      classes.push("bg-green-100");
-    }
+
+    // Apply selected state, which should override other background colors
     if (selectedItemIds.has(item.id)) {
-      classes.push("bg-blue-100 border-blue-300"); // Highlight selected row
+      classes = cn(classes, "bg-blue-100 hover:bg-blue-200 border-blue-300");
     }
-    return cn(classes);
+    
+    return classes;
   };
 
   if (loading) {
@@ -360,6 +372,13 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
                 disabled={selectedItemIds.size === 0 || loading}
               >
                 Desfasado ({selectedItemIds.size})
+              </Button>
+              <Button
+                onClick={() => handleBulkStatusChange('clear', false)}
+                className="bg-gray-300 hover:bg-gray-400 text-gray-800 h-8 px-3 text-sm"
+                disabled={selectedItemIds.size === 0 || loading}
+              >
+                Desmarcar ({selectedItemIds.size})
               </Button>
             </div>
           )}
