@@ -47,7 +47,6 @@ const InventoryPage: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // No longer needed for sticky table header
   const cardHeaderRef = useRef<HTMLDivElement>(null); 
 
   const fetchInventory = useCallback(async (profile: UserProfile) => {
@@ -66,14 +65,18 @@ const InventoryPage: React.FC = () => {
       freezers ( name )
     `);
 
-    // Logic for filtering inventory based on user role and current_freezer_id
+    // Logic for filtering inventory based on user role
     if (profile.role === 'User' && profile.current_freezer_id) {
+      // Users only see items from their currently selected freezer
       query = query.eq('freezer_id', profile.current_freezer_id);
-    } else if ((profile.role === 'Administrator' || profile.role === 'Veterinario') && profile.current_freezer_id) {
-      // If Admin/Veterinario has a specific freezer selected, show only that one
-      query = query.eq('freezer_id', profile.current_freezer_id);
+    } else if (profile.role === 'Administrator') {
+      // Administrators see all if no freezer is selected, or filtered if one is
+      if (profile.current_freezer_id) {
+        query = query.eq('freezer_id', profile.current_freezer_id);
+      }
+      // If current_freezer_id is null for Administrator, no filter is applied, showing all.
     }
-    // If Admin/Veterinario has NO current_freezer_id, the query remains unfiltered, showing all.
+    // If role is 'Veterinario', no 'freezer_id' filter is applied, so they always see all.
 
     query = query.order('entry_date', { ascending: false });
 
@@ -164,12 +167,10 @@ const InventoryPage: React.FC = () => {
       };
       setUserProfile(profile);
 
-      console.log("User Profile Role:", profile.role);
-      console.log("User Profile Current Freezer ID:", profile.current_freezer_id);
-
       const name = await fetchFreezerName(profile.current_freezer_id);
       setCurrentFreezerName(name);
 
+      // Only redirect 'User' role if no freezer is selected
       if (profile.role === 'User' && !profile.current_freezer_id) {
         toast({
           title: "Atención",
@@ -275,7 +276,7 @@ const InventoryPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
-      <Card className="w-full max-w-6xl mx-auto mt-8 shadow-lg">
+      <Card className="w-full max-w-full mx-auto mt-8 shadow-lg">
         <CardHeader ref={cardHeaderRef} className="sticky top-0 bg-card z-20 pb-0">
           <CardTitle className="text-center">
             {userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinario' ?
