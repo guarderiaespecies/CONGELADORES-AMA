@@ -269,7 +269,7 @@ const InventoryPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
-      <Card className="w-full max-w-4xl mx-auto mt-8 shadow-lg">
+      <Card className="w-full max-w-5xl mx-auto mt-8 shadow-lg">
         <CardHeader ref={cardHeaderRef} className="sticky top-0 bg-card z-20 pb-0">
           <CardTitle className="text-center">
             {userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinario' ?
