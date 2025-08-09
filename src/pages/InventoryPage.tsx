@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } => {
 import { ArrowLeft, Check, X, Edit } from "lucide-react";
 import {
   Table,
@@ -161,6 +161,9 @@ const InventoryPage: React.FC = () => {
       };
       setUserProfile(profile);
 
+      console.log("User Profile Role:", profile.role);
+      console.log("User Profile Current Freezer ID:", profile.current_freezer_id);
+
       const name = await fetchFreezerName(profile.current_freezer_id);
       setCurrentFreezerName(name);
 
@@ -269,7 +272,7 @@ const InventoryPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
-      <Card className="w-full max-w-5xl mx-auto mt-8 shadow-lg">
+      <Card className="w-full max-w-6xl mx-auto mt-8 shadow-lg">
         <CardHeader ref={cardHeaderRef} className="sticky top-0 bg-card z-20 pb-0">
           <CardTitle className="text-center">
             {userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinario' ?
