@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Edit, Trash2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -14,6 +14,34 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Profile {
   id: string;
@@ -25,10 +53,18 @@ interface Profile {
   current_freezer_name?: string; // To store the joined name
 }
 
+interface Freezer {
+  id: string;
+  name: string;
+}
+
 const ProfilesPage: React.FC = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [freezers, setFreezers] = useState<Freezer[]>([]); // To populate freezer dropdowns
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -65,6 +101,24 @@ const ProfilesPage: React.FC = () => {
     setLoading(false);
   }, [toast]);
 
+  const fetchFreezers = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('freezers')
+      .select('id, name')
+      .order('name', { ascending: true });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: `No se pudieron cargar los congeladores para los selectores: ${error.message}`,
+        variant: "destructive",
+      });
+      setFreezers([]);
+    } else {
+      setFreezers(data || []);
+    }
+  }, [toast]);
+
   useEffect(() => {
     const checkUserAndLoadData = async () => {
       setLoading(true);
@@ -95,7 +149,8 @@ const ProfilesPage: React.FC = () => {
         navigate('/app');
       } else {
         setUserRole(profileData.role);
-        fetchProfiles();
+        await fetchFreezers(); // Fetch freezers first
+        await fetchProfiles(); // Then fetch profiles
       }
     };
 
@@ -112,7 +167,50 @@ const ProfilesPage: React.FC = () => {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [navigate, toast, fetchProfiles]);
+  }, [navigate, toast, fetchProfiles, fetchFreezers]);
+
+  const handleEditProfile = async () => {
+    if (!editingProfile || !editingProfile.username.trim() || !editingProfile.role.trim()) {
+      toast({ title: "Advertencia", description: "Usuario y Rol no pueden estar vacíos.", variant: "default" });
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        username: editingProfile.username.trim(),
+        role: editingProfile.role.trim(),
+        default_freezer_id: editingProfile.default_freezer_id,
+        current_freezer_id: editingProfile.current_freezer_id,
+      })
+      .eq('id', editingProfile.id);
+
+    if (error) {
+      toast({ title: "Error", description: `Error al actualizar perfil: ${error.message}`, variant: "destructive" });
+    } else {
+      toast({ title: "Éxito", description: "Perfil actualizado correctamente." });
+      setEditingProfile(null);
+      setIsEditDialogOpen(false);
+      fetchProfiles();
+    }
+    setLoading(false);
+  };
+
+  const handleDeleteProfile = async (id: string) => {
+    setLoading(true);
+    const { error } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      toast({ title: "Error", description: `Error al eliminar perfil: ${error.message}`, variant: "destructive" });
+    } else {
+      toast({ title: "Éxito", description: "Perfil eliminado correctamente." });
+      fetchProfiles();
+    }
+    setLoading(false);
+  };
 
   if (loading) {
     return (
@@ -158,6 +256,7 @@ const ProfilesPage: React.FC = () => {
                     <TableHead>Rol</TableHead>
                     <TableHead>Congelador por Defecto</TableHead>
                     <TableHead>Congelador Actual</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -167,12 +266,137 @@ const ProfilesPage: React.FC = () => {
                       <TableCell>{profile.role}</TableCell>
                       <TableCell>{profile.default_freezer_name}</TableCell>
                       <TableCell>{profile.current_freezer_name}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setEditingProfile(profile);
+                            setIsEditDialogOpen(true);
+                          }}
+                          className="mr-2"
+                        >
+                          <Edit className="h-4 w-4" />
+                          <span className="sr-only">Editar</span>
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                              <span className="sr-only">Eliminar</span>
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta acción no se puede deshacer. Esto eliminará permanentemente el perfil de
+                                <span className="font-bold"> {profile.username}</span>.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteProfile(profile.id)} disabled={loading}>
+                                {loading ? 'Eliminando...' : 'Eliminar'}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </div>
           )}
+
+          {/* Edit Profile Dialog */}
+          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Editar Perfil</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="username" className="text-right">
+                    Usuario
+                  </Label>
+                  <Input
+                    id="username"
+                    value={editingProfile?.username || ''}
+                    onChange={(e) => setEditingProfile(prev => prev ? { ...prev, username: e.target.value } : null)}
+                    className="col-span-3"
+                    placeholder="Nombre de usuario"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="role" className="text-right">
+                    Rol
+                  </Label>
+                  <Select
+                    value={editingProfile?.role || ''}
+                    onValueChange={(value) => setEditingProfile(prev => prev ? { ...prev, role: value } : null)}
+                  >
+                    <SelectTrigger id="role" className="col-span-3">
+                      <SelectValue placeholder="Selecciona un rol" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="User">User</SelectItem>
+                      <SelectItem value="Administrator">Administrator</SelectItem>
+                      <SelectItem value="Veterinary">Veterinary</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="defaultFreezer" className="text-right">
+                    Congelador por Defecto
+                  </Label>
+                  <Select
+                    value={editingProfile?.default_freezer_id || ''}
+                    onValueChange={(value) => setEditingProfile(prev => prev ? { ...prev, default_freezer_id: value === 'null' ? null : value } : null)}
+                  >
+                    <SelectTrigger id="defaultFreezer" className="col-span-3">
+                      <SelectValue placeholder="Ninguno" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="null">Ninguno</SelectItem>
+                      {freezers.map((freezer) => (
+                        <SelectItem key={freezer.id} value={freezer.id}>
+                          {freezer.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="currentFreezer" className="text-right">
+                    Congelador Actual
+                  </Label>
+                  <Select
+                    value={editingProfile?.current_freezer_id || ''}
+                    onValueChange={(value) => setEditingProfile(prev => prev ? { ...prev, current_freezer_id: value === 'null' ? null : value } : null)}
+                  >
+                    <SelectTrigger id="currentFreezer" className="col-span-3">
+                      <SelectValue placeholder="Ninguno" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="null">Ninguno</SelectItem>
+                      {freezers.map((freezer) => (
+                        <SelectItem key={freezer.id} value={freezer.id}>
+                          {freezer.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button onClick={handleEditProfile} disabled={loading}>
+                  {loading ? 'Guardando...' : 'Guardar Cambios'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
     </div>
