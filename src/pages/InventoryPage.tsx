@@ -87,7 +87,10 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
       console.log("DEBUG: InventoryPage - No specific freezer filter applied based on role/current_freezer_id.");
     }
 
-    query = query.order('entry_date', { ascending: false });
+    // Order by freezer name ascending, then by entry date descending (most recent first)
+    query = query
+      .order('freezers.name', { ascending: true })
+      .order('entry_date', { ascending: false });
 
     const { data, error } = await query;
 
@@ -328,10 +331,10 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
                   <TableHead className="w-[60px] text-center">Solicitado</TableHead>
                   <TableHead className="w-[60px] text-center">Desfasado</TableHead>
                   {showFreezerColumn && <TableHead className="w-[120px]">Congelador</TableHead>}
+                  <TableHead className="w-[100px]">Fecha</TableHead> {/* Moved Fecha here */}
                   <TableHead className="w-[100px]">Precinto</TableHead>
                   <TableHead className="w-[120px]">Especie</TableHead>
                   <TableHead className="min-w-[150px]">Observaciones</TableHead>
-                  <TableHead className="w-[100px]">Fecha</TableHead>
                   {showAdminColumns && (
                     <>
                       <TableHead className="w-[120px]">Creado Por</TableHead>
@@ -365,10 +368,10 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
                       )}
                     </TableCell>
                     {showFreezerColumn && <TableCell className="w-[120px]">{item.freezer_name}</TableCell>}
+                    <TableCell className="w-[100px]">{format(new Date(item.entry_date), "dd/MM/yyyy", { locale: es })}</TableCell> {/* Moved Fecha here */}
                     <TableCell className="w-[100px]">{item.seal_no || '-'}</TableCell>
                     <TableCell className="w-[120px]">{item.species}</TableCell>
                     <TableCell className="min-w-[150px]">{item.observations || '-'}</TableCell>
-                    <TableCell className="w-[100px]">{format(new Date(item.entry_date), "dd/MM/yyyy", { locale: es })}</TableCell>
                     {showAdminColumns ? ( // Only show these columns for Administrator
                       <>
                         <TableCell className="w-[120px]">{item.created_by_user_email}</TableCell>
