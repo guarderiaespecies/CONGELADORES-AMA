@@ -3,8 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// import { useToast } from "@/components/ui/use-toast"; // Eliminado
-import { ArrowLeft, Edit } from "lucide-react";
+import { ArrowLeft, Edit, Download } from "lucide-react"; // Importar el icono Download
 import {
   Table,
   TableBody,
@@ -17,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { es } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
+import * as XLSX from 'xlsx'; // Importar la librería XLSX
 
 interface InventoryItem {
   id: string;
@@ -49,7 +49,6 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(initialUserProfile || null); // Initialize with prop
   const [currentFreezerName, setCurrentFreezerName] = useState<string | null>(null);
-  // const { toast } = useToast(); // Eliminado
   const navigate = useNavigate();
 
   const cardHeaderRef = useRef<HTMLDivElement>(null); 
@@ -68,31 +67,26 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
       status_solicitado,
       status_desfasado,
       freezers ( name ),
-      profiles ( username ) // <--- Directamente seleccionamos el username de la tabla profiles
+      profiles ( username )
     `);
 
     // Logic for filtering inventory based on user role
     if (profile.role === 'User' && profile.current_freezer_id) {
-      // Users only see items from their currently selected freezer
       query = query.eq('freezer_id', profile.current_freezer_id);
       console.log("DEBUG: InventoryPage - Filtering by user's current freezer:", profile.current_freezer_id);
     } else if (profile.role === 'Administrator' && profile.current_freezer_id) {
-      // If Admin has a specific freezer selected, show only that one
       query = query.eq('freezer_id', profile.current_freezer_id);
       console.log("DEBUG: InventoryPage - Filtering by admin's current freezer:", profile.current_freezer_id);
     } else if (profile.role === 'Veterinary' || (profile.role === 'Administrator' && !profile.current_freezer_id)) {
-      // Veterinarians always see all, and Administrators see all if no freezer is selected
       console.log("DEBUG: InventoryPage - No freezer filter applied (Admin/Veterinary viewing all).");
     } else {
-      // Fallback for other roles or unhandled cases, might result in no data if no filter
       console.log("DEBUG: InventoryPage - No specific freezer filter applied based on role/current_freezer_id.");
     }
 
-    // Order by freezer name ascending, then by entry date descending (most recent first), then by creation timestamp descending
     query = query
       .order('name', { ascending: true, foreignTable: 'freezers' }) 
       .order('entry_date', { ascending: false })
-      .order('created_at', { ascending: false }); // Added for stable ordering
+      .order('created_at', { ascending: false });
 
     const { data, error } = await query;
 
@@ -103,12 +97,12 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
       const itemsWithFreezerAndUserName = data.map(item => ({
         ...item,
         freezer_name: item.freezers?.name || 'Desconocido',
-        created_by_username: item.profiles?.username || 'Desconocido' // <--- Usamos el username directamente del join
+        created_by_username: item.profiles?.username || 'Desconocido'
       }));
       setInventoryItems(itemsWithFreezerAndUserName as InventoryItem[]);
     }
     setLoading(false);
-  }, []); // Dependencias actualizadas
+  }, []);
 
   const fetchFreezerName = useCallback(async (freezerId: string | null) => {
     if (!freezerId) return null;
@@ -193,7 +187,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [navigate, fetchInventory, fetchFreezerName, initialUserProfile]); // Dependencias actualizadas
+  }, [navigate, fetchInventory, fetchFreezerName, initialUserProfile]);
 
   const handleEditItem = (itemId: string) => {
     navigate(`/edit-item/${itemId}`);
@@ -261,18 +255,42 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
     setLoading(false);
   };
 
+  const handleExportToExcel = () => {
+    if (inventoryItems.length === 0) {
+        console.warn("No hay datos para exportar.");
+        return;
+    }
+
+    // Prepare data for export
+    const dataToExport = inventoryItems.map(item => ({
+        'ID': item.id,
+        'Congelador': item.freezer_name,
+        'Fecha Entrada': format(new Date(item.entry_date), "dd/MM/yyyy", { locale: es }),
+        'Nº Precinto': item.seal_no || '-',
+        'Especie': item.species,
+        'Observaciones': item.observations || '-',
+        'Solicitado': item.status_solicitado ? 'Sí' : 'No',
+        'Desfasado': item.status_desfasado ? 'Sí' : 'No',
+        'Creado Por': item.created_by_username,
+        'Fecha Creación': format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: es }),
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Inventario");
+    XLSX.writeFile(wb, "inventario_congeladores.xlsx");
+    console.log("Inventario exportado a Excel.");
+  };
+
   const getRowClasses = (item: InventoryItem) => {
-    // Base classes for all rows, including a default hover effect
     let classes = "hover:bg-gray-100";
 
-    // Apply status-based background colors and their specific hover effects
     if (item.status_desfasado) {
       classes = cn(classes, "bg-red-100 hover:bg-red-200");
     } else if (item.status_solicitado) {
       classes = cn(classes, "bg-green-100 hover:bg-green-200");
     }
 
-    // Apply selected state, which should override other background colors
     if (selectedItemIds.has(item.id)) {
       classes = cn(classes, "bg-blue-100 hover:bg-blue-200 border-blue-300");
     }
@@ -293,11 +311,10 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
     );
   }
 
-  // Determine if the "Congelador" column should be shown
   const showFreezerColumn = (userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary') && !userProfile?.current_freezer_id;
-  const showAdminOnlyColumns = userProfile?.role === 'Administrator'; // For 'Creado Por' and 'Fecha Creación'
-  const canEditItem = userProfile?.role === 'Administrator' || userProfile?.role === 'User'; // For the edit button
-  const canEditStatus = userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary'; // For bulk status change buttons
+  const showAdminOnlyColumns = userProfile?.role === 'Administrator';
+  const canEditItem = userProfile?.role === 'Administrator' || userProfile?.role === 'User';
+  const canEditStatus = userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary';
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
@@ -320,13 +337,23 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
               <ArrowLeft className="h-5 w-5" />
               <span className="sr-only">Volver</span>
             </Button>
+            {/* Nuevo Botón de Exportar a Excel */}
+            <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleExportToExcel}
+                className="absolute top-2 left-2 h-8 w-8"
+            >
+                <Download className="h-5 w-5" />
+                <span className="sr-only">Descargar Excel</span>
+            </Button>
           </CardHeader>
         )}
 
         <CardContent className="p-0 overflow-x-auto pt-4">
           {canEditStatus && (
-            <div className="flex justify-center mb-4 px-4 relative"> {/* Parent div for centering and positioning */}
-              <div className="flex space-x-4"> {/* This div will contain the centered buttons */}
+            <div className="flex justify-center mb-4 px-4 relative">
+              <div className="flex space-x-4">
                 <Button
                   onClick={() => handleBulkStatusChange('solicitado', true)}
                   className="bg-green-600 hover:bg-green-700 text-white"
@@ -386,7 +413,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
                     <TableCell className="min-w-[150px]">{item.observations || '-'}</TableCell>
                     {showAdminOnlyColumns && (
                       <>
-                        <TableCell className="w-[120px]">{item.created_by_username}</TableCell> {/* Display username */}
+                        <TableCell className="w-[120px]">{item.created_by_username}</TableCell>
                         <TableCell className="w-[150px]">{format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: es })}</TableCell>
                       </>
                     )}
