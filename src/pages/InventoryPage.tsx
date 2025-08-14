@@ -312,7 +312,8 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
   }
 
   const showFreezerColumn = (userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary') && !userProfile?.current_freezer_id;
-  const showAdminOnlyColumns = userProfile?.role === 'Administrator';
+  // Modificado: Ahora incluye 'Veterinary' para mostrar las columnas de administración
+  const showAdminOnlyColumns = userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary';
   const canEditItem = userProfile?.role === 'Administrator' || userProfile?.role === 'User';
   const canEditStatus = userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary';
 
@@ -391,7 +392,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
                     <TableHead className="w-[100px]">Precinto</TableHead>
                     <TableHead className="w-[120px]">Especie</TableHead>
                     <TableHead className="min-w-[150px]">Observaciones</TableHead>
-                    {showAdminOnlyColumns && (
+                    {showAdminOnlyColumns && ( // Esta condición ahora incluye 'Veterinary'
                       <>
                         <TableHead className="w-[120px]">Creado Por</TableHead>
                         <TableHead className="w-[150px]">Fecha Creación</TableHead>
@@ -412,7 +413,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
                       <TableCell className="w-[100px]">{item.seal_no || '-'}</TableCell>
                       <TableCell className="w-[120px]">{item.species}</TableCell>
                       <TableCell className="min-w-[150px]">{item.observations || '-'}</TableCell>
-                      {showAdminOnlyColumns && (
+                      {showAdminOnlyColumns && ( // Esta condición ahora incluye 'Veterinary'
                         <>
                           <TableCell className="w-[120px]">{item.created_by_username}</TableCell>
                           <TableCell className="w-[150px]">{format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: es })}</TableCell>
