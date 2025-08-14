@@ -312,9 +312,11 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
   }
 
   const showFreezerColumn = (userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary') && !userProfile?.current_freezer_id;
-  // Modificado: Ahora incluye 'Veterinary' para mostrar las columnas de administración
-  const showAdminOnlyColumns = userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary';
+  // Modificado: Las columnas 'Creado Por' y 'Fecha Creación' solo se muestran para 'Administrator'
+  const showAdminOnlyColumns = userProfile?.role === 'Administrator'; 
+  // Modificado: El botón de edición solo se muestra para 'Administrator' y 'User'
   const canEditItem = userProfile?.role === 'Administrator' || userProfile?.role === 'User';
+  // Las acciones masivas (Solicitar, Desfasado, Desmarcar) y el botón de exportar siguen siendo para 'Administrator' y 'Veterinary'
   const canEditStatus = userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary';
 
   return (
@@ -338,7 +340,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
               <ArrowLeft className="h-5 w-5" />
               <span className="sr-only">Volver</span>
             </Button>
-            {/* Nuevo Botón de Exportar a Excel */}
+            {/* Botón de Exportar a Excel visible para Administrator y Veterinary */}
             {(userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary') && (
               <Button
                   variant="ghost"
@@ -392,7 +394,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
                     <TableHead className="w-[100px]">Precinto</TableHead>
                     <TableHead className="w-[120px]">Especie</TableHead>
                     <TableHead className="min-w-[150px]">Observaciones</TableHead>
-                    {showAdminOnlyColumns && ( // Esta condición ahora incluye 'Veterinary'
+                    {showAdminOnlyColumns && ( // Solo para Administrator
                       <>
                         <TableHead className="w-[120px]">Creado Por</TableHead>
                         <TableHead className="w-[150px]">Fecha Creación</TableHead>
@@ -413,13 +415,13 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
                       <TableCell className="w-[100px]">{item.seal_no || '-'}</TableCell>
                       <TableCell className="w-[120px]">{item.species}</TableCell>
                       <TableCell className="min-w-[150px]">{item.observations || '-'}</TableCell>
-                      {showAdminOnlyColumns && ( // Esta condición ahora incluye 'Veterinary'
+                      {showAdminOnlyColumns && ( // Solo para Administrator
                         <>
                           <TableCell className="w-[120px]">{item.created_by_username}</TableCell>
                           <TableCell className="w-[150px]">{format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: es })}</TableCell>
                         </>
                       )}
-                      {canEditItem && (
+                      {canEditItem && ( // Solo para Administrator y User
                         <TableCell className="w-[80px] text-center">
                           <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEditItem(item.id); }}>
                             <Edit className="h-4 w-4" />
