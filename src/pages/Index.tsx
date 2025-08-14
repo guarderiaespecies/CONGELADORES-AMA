@@ -109,7 +109,7 @@ const Index = () => {
   // If user is Veterinary, show the InventoryPage directly
   if (userRole === 'Veterinary') {
     return (
-      <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
+      <div className="min-h-screen flex flex-col items-center bg-gray-100"> {/* Removed p-4 here */}
         <AppHeader
           userEmail={user?.email}
           userRole={userRole}

@@ -317,10 +317,10 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
   const canEditStatus = userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary';
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100 p-4"> {/* Removed items-center */}
-      <Card className={cn("w-full max-w-full shadow-lg", !hideHeader && "mt-8")}>
+    <div className="min-h-screen flex flex-col bg-gray-100"> {/* Removed p-4 from here */}
+      <Card className={cn("w-full shadow-lg px-4", !hideHeader && "mt-8")}> {/* Added px-4 here */}
         {!hideHeader && (
-          <CardHeader ref={cardHeaderRef} className="sticky top-0 bg-card z-20 pb-4 px-4">
+          <CardHeader ref={cardHeaderRef} className="sticky top-0 bg-card z-20 pb-4"> {/* Removed px-4 from here, now handled by parent Card */}
             <CardTitle className="text-center">
               {userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary' ?
                 (currentFreezerName ? `Inventario del Congelador: ${currentFreezerName}` : 'Inventario de los Congeladores')
@@ -338,21 +338,23 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
               <span className="sr-only">Volver</span>
             </Button>
             {/* Nuevo Botón de Exportar a Excel */}
-            <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleExportToExcel}
-                className="absolute top-2 left-2 h-8 w-8"
-            >
-                <Download className="h-5 w-5" />
-                <span className="sr-only">Descargar Excel</span>
-            </Button>
+            {(userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary') && ( // Ensure visibility for Veterinary
+              <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleExportToExcel}
+                  className="absolute top-2 left-2 h-8 w-8"
+              >
+                  <Download className="h-5 w-5" />
+                  <span className="sr-only">Descargar Excel</span>
+              </Button>
+            )}
           </CardHeader>
         )}
 
         <CardContent className="p-0 pt-4">
           {canEditStatus && (
-            <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mb-4 px-4">
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mb-4"> {/* Removed px-4 from here, now handled by parent Card */}
               <Button
                 onClick={() => handleBulkStatusChange('solicitado', true)}
                 className="bg-green-600 hover:bg-green-700 text-white"
