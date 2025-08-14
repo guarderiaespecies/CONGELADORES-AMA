@@ -3,7 +3,6 @@ import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { supabase } from '@/lib/supabase';
-// import { useToast } from "@/components/ui/use-toast"; // Eliminado
 import AppHeader from "@/components/AppHeader";
 import InventoryPage from "./InventoryPage";
 
@@ -20,7 +19,6 @@ const Index = () => {
   const [currentFreezerName, setCurrentFreezerName] = useState<string | null>(null);
   const [userProfileState, setUserProfileState] = useState<UserProfile | null>(null);
   const navigate = useNavigate();
-  // const { toast } = useToast(); // Eliminado
 
   const fetchUserProfile = useCallback(async (userId: string) => {
     const { data: profileData, error: profileError } = await supabase
@@ -36,7 +34,7 @@ const Index = () => {
       return { role: profileData.role, freezerId: profileData.current_freezer_id, defaultFreezerId: profileData.default_freezer_id };
     }
     return { role: null, freezerId: null, defaultFreezerId: null };
-  }, []); // Dependencias actualizadas
+  }, []);
 
   const fetchFreezerName = useCallback(async (freezerId: string | null) => {
     if (!freezerId) return null;
@@ -78,11 +76,10 @@ const Index = () => {
     const name = await fetchFreezerName(freezerId);
     setCurrentFreezerName(name);
 
-    // Set the userProfileState here to pass to InventoryPage
     setUserProfileState({ role, current_freezer_id: freezerId });
 
     setLoading(false);
-  }, [navigate, fetchUserProfile, fetchFreezerName]); // Dependencias actualizadas
+  }, [navigate, fetchUserProfile, fetchFreezerName]);
 
   useEffect(() => {
     checkUserAndRole();
@@ -118,8 +115,8 @@ const Index = () => {
           userRole={userRole}
           currentFreezerName={currentFreezerName}
         />
-        {userProfileState && ( // Ensure userProfileState is available before rendering InventoryPage
-          <InventoryPage hideHeader={false} initialUserProfile={userProfileState} /> {/* Changed hideHeader to false */}
+        {userProfileState && (
+          <InventoryPage hideHeader={false} initialUserProfile={userProfileState} />
         )}
         <MadeWithDyad />
       </div>
