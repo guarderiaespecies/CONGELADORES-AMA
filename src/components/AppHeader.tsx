@@ -3,8 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { supabase } from '@/lib/supabase';
-// import { useToast } from "@/components/ui/use-toast"; // Eliminado
-import { X, Settings } from 'lucide-react'; // Importar los iconos X y Settings
+import { X, Settings } from 'lucide-react';
 
 interface AppHeaderProps {
   userEmail: string | undefined;
@@ -14,7 +13,6 @@ interface AppHeaderProps {
 
 const AppHeader: React.FC<AppHeaderProps> = ({ userEmail, userRole, currentFreezerName }) => {
   const navigate = useNavigate();
-  // const { toast } = useToast(); // Eliminado
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -31,7 +29,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ userEmail, userRole, currentFreez
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto mb-8 shadow-lg relative">
+    <Card className="w-full mb-8 shadow-lg relative"> {/* Removed max-w-md mx-auto */}
       <CardHeader>
         <img src="/logotipo-azul.png" alt="Logo Principado de Asturias" className="mx-auto mb-4 h-20" />
         <CardTitle className="text-center text-xl font-normal">

@@ -317,10 +317,10 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
   const canEditStatus = userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary';
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100"> {/* Removed p-4 from here */}
-      <Card className={cn("w-full shadow-lg px-4", !hideHeader && "mt-8")}> {/* Added px-4 here */}
+    <div className="min-h-screen flex flex-col bg-gray-100">
+      <Card className={cn("w-full shadow-lg px-4", !hideHeader && "mt-8")}> {/* Removed max-w-2xl mx-auto */}
         {!hideHeader && (
-          <CardHeader ref={cardHeaderRef} className="sticky top-0 bg-card z-20 pb-4"> {/* Removed px-4 from here, now handled by parent Card */}
+          <CardHeader ref={cardHeaderRef} className="sticky top-0 bg-card z-20 pb-4">
             <CardTitle className="text-center">
               {userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary' ?
                 (currentFreezerName ? `Inventario del Congelador: ${currentFreezerName}` : 'Inventario de los Congeladores')
@@ -354,7 +354,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
 
         <CardContent className="p-0 pt-4">
           {canEditStatus && (
-            <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mb-4"> {/* Removed px-4 from here, now handled by parent Card */}
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mb-4">
               <Button
                 onClick={() => handleBulkStatusChange('solicitado', true)}
                 className="bg-green-600 hover:bg-green-700 text-white"

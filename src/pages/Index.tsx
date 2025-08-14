@@ -73,7 +73,7 @@ const Index = () => {
     setUserRole(role);
     setCurrentFreezerId(freezerId);
 
-    const name = await fetchFreezerName(freezerId);
+    const name = await fetchFreezerName(freeizerId);
     setCurrentFreezerName(name);
 
     setUserProfileState({ role, current_freezer_id: freezerId });
@@ -109,7 +109,7 @@ const Index = () => {
   // If user is Veterinary, show the InventoryPage directly
   if (userRole === 'Veterinary') {
     return (
-      <div className="min-h-screen flex flex-col items-center bg-gray-100"> {/* Removed p-4 here */}
+      <div className="min-h-screen flex flex-col bg-gray-100 p-4"> {/* Removed items-center, added p-4 */}
         <AppHeader
           userEmail={user?.email}
           userRole={userRole}
