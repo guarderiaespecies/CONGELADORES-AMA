@@ -73,7 +73,8 @@ const Index = () => {
     setUserRole(role);
     setCurrentFreezerId(freezerId);
 
-    const name = await fetchFreezerName(freeizerId);
+    // CORRECCIÓN: Cambiado 'freeizerId' a 'freezerId'
+    const name = await fetchFreezerName(freezerId); 
     setCurrentFreezerName(name);
 
     setUserProfileState({ role, current_freezer_id: freezerId });
