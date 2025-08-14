@@ -158,7 +158,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
       console.log("DEBUG: InventoryPage - User Profile Current Freezer ID:", currentProfile?.current_freezer_id);
 
       const name = await fetchFreezerName(currentProfile?.current_freezer_id || null);
-      setCurrentFreeizerName(name);
+      setCurrentFreezerName(name);
 
       if (currentProfile?.role === 'User' && !currentProfile?.current_freezer_id) {
         console.warn("Atención: No tienes un congelador seleccionado. Por favor, selecciona uno para ver el inventario.");
