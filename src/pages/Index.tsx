@@ -119,7 +119,7 @@ const Index = () => {
           currentFreezerName={currentFreezerName}
         />
         {userProfileState && ( // Ensure userProfileState is available before rendering InventoryPage
-          <InventoryPage hideHeader={true} initialUserProfile={userProfileState} />
+          <InventoryPage hideHeader={false} initialUserProfile={userProfileState} /> {/* Changed hideHeader to false */}
         )}
         <MadeWithDyad />
       </div>

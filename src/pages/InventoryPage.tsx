@@ -317,10 +317,10 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
   const canEditStatus = userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary';
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4"> {/* Kept p-4 here for overall page padding */}
-      <Card className={cn("w-full max-w-full shadow-lg", !hideHeader && "mt-8")}> {/* Removed mx-auto to align left within parent's padding */}
+    <div className="min-h-screen flex flex-col bg-gray-100 p-4"> {/* Removed items-center */}
+      <Card className={cn("w-full max-w-full shadow-lg", !hideHeader && "mt-8")}>
         {!hideHeader && (
-          <CardHeader ref={cardHeaderRef} className="sticky top-0 bg-card z-20 pb-4 px-4"> {/* Added px-4 for horizontal padding */}
+          <CardHeader ref={cardHeaderRef} className="sticky top-0 bg-card z-20 pb-4 px-4">
             <CardTitle className="text-center">
               {userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary' ?
                 (currentFreezerName ? `Inventario del Congelador: ${currentFreezerName}` : 'Inventario de los Congeladores')
@@ -350,9 +350,9 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
           </CardHeader>
         )}
 
-        <CardContent className="p-0 pt-4"> {/* Kept p-0 for no horizontal padding, allowing overflow-x-auto to work */}
+        <CardContent className="p-0 pt-4">
           {canEditStatus && (
-            <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mb-4 px-4"> {/* Kept px-4 for buttons */}
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mb-4 px-4">
               <Button
                 onClick={() => handleBulkStatusChange('solicitado', true)}
                 className="bg-green-600 hover:bg-green-700 text-white"
@@ -380,8 +380,8 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
           {inventoryItems.length === 0 ? (
             <p className="text-center text-gray-500 p-4">No hay elementos en el inventario de este congelador.</p>
           ) : (
-            <div className="overflow-x-auto"> {/* This div handles the horizontal scrolling */}
-              <Table className="min-w-full"> {/* Ensures table takes at least full width of its scrollable container */}
+            <div className="overflow-x-auto">
+              <Table className="min-w-full">
                 <TableHeader className="bg-card z-10">
                   <TableRow>
                     {showFreezerColumn && <TableHead className="w-[120px]">Congelador</TableHead>}
