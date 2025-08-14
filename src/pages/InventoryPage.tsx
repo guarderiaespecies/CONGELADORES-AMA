@@ -350,28 +350,26 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
           </CardHeader>
         )}
 
-        <CardContent className="p-0 overflow-x-auto pt-4">
+        <CardContent className="p-0 pt-4"> {/* Removed overflow-x-auto from CardContent */}
           {canEditStatus && (
-            <div className="flex justify-center mb-4 px-4 relative">
-              <div className="flex space-x-4">
-                <Button
-                  onClick={() => handleBulkStatusChange('solicitado', true)}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                  disabled={selectedItemIds.size === 0 || loading}
-                >
-                  Solicitar ({selectedItemIds.size})
-                </Button>
-                <Button
-                  onClick={() => handleBulkStatusChange('desfasado', true)}
-                  className="bg-red-600 hover:bg-red-700 text-white"
-                  disabled={selectedItemIds.size === 0 || loading}
-                >
-                  Desfasado ({selectedItemIds.size})
-                </Button>
-              </div>
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mb-4 px-4"> {/* Adjusted button layout */}
+              <Button
+                onClick={() => handleBulkStatusChange('solicitado', true)}
+                className="bg-green-600 hover:bg-green-700 text-white"
+                disabled={selectedItemIds.size === 0 || loading}
+              >
+                Solicitar ({selectedItemIds.size})
+              </Button>
+              <Button
+                onClick={() => handleBulkStatusChange('desfasado', true)}
+                className="bg-red-600 hover:bg-red-700 text-white"
+                disabled={selectedItemIds.size === 0 || loading}
+              >
+                Desfasado ({selectedItemIds.size})
+              </Button>
               <Button
                 onClick={() => handleBulkStatusChange('clear', false)}
-                className="absolute right-4 bg-gray-300 hover:bg-gray-400 text-gray-800 h-8 px-3 text-sm"
+                className="bg-gray-300 hover:bg-gray-400 text-gray-800 h-8 px-3 text-sm"
                 disabled={selectedItemIds.size === 0 || loading}
               >
                 Desmarcar ({selectedItemIds.size})
@@ -382,53 +380,55 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
           {inventoryItems.length === 0 ? (
             <p className="text-center text-gray-500 p-4">No hay elementos en el inventario de este congelador.</p>
           ) : (
-            <Table>
-              <TableHeader className="bg-card z-10">
-                <TableRow>
-                  {showFreezerColumn && <TableHead className="w-[120px]">Congelador</TableHead>}
-                  <TableHead className="w-[100px]">Fecha</TableHead>
-                  <TableHead className="w-[100px]">Precinto</TableHead>
-                  <TableHead className="w-[120px]">Especie</TableHead>
-                  <TableHead className="min-w-[150px]">Observaciones</TableHead>
-                  {showAdminOnlyColumns && (
-                    <>
-                      <TableHead className="w-[120px]">Creado Por</TableHead>
-                      <TableHead className="w-[150px]">Fecha Creación</TableHead>
-                    </>
-                  )}
-                  {canEditItem && <TableHead className="w-[80px] text-center">Acciones</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {inventoryItems.map((item) => (
-                  <TableRow
-                    key={item.id}
-                    className={getRowClasses(item)}
-                    onClick={() => handleRowClick(item.id)}
-                  >
-                    {showFreezerColumn && <TableCell className="w-[120px]">{item.freezer_name}</TableCell>}
-                    <TableCell className="w-[100px]">{format(new Date(item.entry_date), "dd/MM/yyyy", { locale: es })}</TableCell>
-                    <TableCell className="w-[100px]">{item.seal_no || '-'}</TableCell>
-                    <TableCell className="w-[120px]">{item.species}</TableCell>
-                    <TableCell className="min-w-[150px]">{item.observations || '-'}</TableCell>
+            <div className="overflow-x-auto"> {/* Added wrapper div for table scrolling */}
+              <Table className="min-w-full"> {/* Added min-w-full to ensure table expands */}
+                <TableHeader className="bg-card z-10">
+                  <TableRow>
+                    {showFreezerColumn && <TableHead className="w-[120px]">Congelador</TableHead>}
+                    <TableHead className="w-[100px]">Fecha</TableHead>
+                    <TableHead className="w-[100px]">Precinto</TableHead>
+                    <TableHead className="w-[120px]">Especie</TableHead>
+                    <TableHead className="min-w-[150px]">Observaciones</TableHead>
                     {showAdminOnlyColumns && (
                       <>
-                        <TableCell className="w-[120px]">{item.created_by_username}</TableCell>
-                        <TableCell className="w-[150px]">{format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: es })}</TableCell>
+                        <TableHead className="w-[120px]">Creado Por</TableHead>
+                        <TableHead className="w-[150px]">Fecha Creación</TableHead>
                       </>
                     )}
-                    {canEditItem && (
-                      <TableCell className="w-[80px] text-center">
-                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEditItem(item.id); }}>
-                          <Edit className="h-4 w-4" />
-                          <span className="sr-only">Editar</span>
-                        </Button>
-                      </TableCell>
-                    )}
+                    {canEditItem && <TableHead className="w-[80px] text-center">Acciones</TableHead>}
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {inventoryItems.map((item) => (
+                    <TableRow
+                      key={item.id}
+                      className={getRowClasses(item)}
+                      onClick={() => handleRowClick(item.id)}
+                    >
+                      {showFreezerColumn && <TableCell className="w-[120px]">{item.freezer_name}</TableCell>}
+                      <TableCell className="w-[100px]">{format(new Date(item.entry_date), "dd/MM/yyyy", { locale: es })}</TableCell>
+                      <TableCell className="w-[100px]">{item.seal_no || '-'}</TableCell>
+                      <TableCell className="w-[120px]">{item.species}</TableCell>
+                      <TableCell className="min-w-[150px]">{item.observations || '-'}</TableCell>
+                      {showAdminOnlyColumns && (
+                        <>
+                          <TableCell className="w-[120px]">{item.created_by_username}</TableCell>
+                          <TableCell className="w-[150px]">{format(new Date(item.created_at), "dd/MM/yyyy HH:mm", { locale: es })}</TableCell>
+                        </>
+                      )}
+                      {canEditItem && (
+                        <TableCell className="w-[80px] text-center">
+                          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleEditItem(item.id); }}>
+                            <Edit className="h-4 w-4" />
+                            <span className="sr-only">Editar</span>
+                          </Button>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
