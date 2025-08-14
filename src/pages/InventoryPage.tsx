@@ -158,7 +158,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
       console.log("DEBUG: InventoryPage - User Profile Current Freezer ID:", currentProfile?.current_freezer_id);
 
       const name = await fetchFreezerName(currentProfile?.current_freezer_id || null);
-      setCurrentFreezerName(name); // Corrected typo here
+      setCurrentFreezerName(name);
 
       if (currentProfile?.role === 'User' && !currentProfile?.current_freezer_id) {
         console.warn("Atención: No tienes un congelador seleccionado. Por favor, selecciona uno para ver el inventario.");
@@ -318,9 +318,9 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
-      <Card className={cn("w-full shadow-lg", !hideHeader && "mt-8")}> {/* Removed px-4 from here */}
+      <Card className={cn("w-full shadow-lg", !hideHeader && "mt-8")}>
         {!hideHeader && (
-          <CardHeader ref={cardHeaderRef} className="sticky top-0 bg-card z-20 pb-4 px-4"> {/* Added px-4 here */}
+          <CardHeader ref={cardHeaderRef} className="sticky top-0 bg-card z-20 pb-4 px-4">
             <CardTitle className="text-center">
               {userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary' ?
                 (currentFreezerName ? `Inventario del Congelador: ${currentFreezerName}` : 'Inventario de los Congeladores')
@@ -338,7 +338,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
               <span className="sr-only">Volver</span>
             </Button>
             {/* Nuevo Botón de Exportar a Excel */}
-            {(userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary') && ( // Ensure visibility for Veterinary
+            {(userProfile?.role === 'Administrator' || userProfile?.role === 'Veterinary') && (
               <Button
                   variant="ghost"
                   size="icon"
@@ -352,9 +352,9 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
           </CardHeader>
         )}
 
-        <CardContent className="p-0 pt-4"> {/* No px-4 here */}
+        <CardContent className="p-0 pt-4">
           {canEditStatus && (
-            <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mb-4 px-4"> {/* Added px-4 here */}
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mb-4 px-4">
               <Button
                 onClick={() => handleBulkStatusChange('solicitado', true)}
                 className="bg-green-600 hover:bg-green-700 text-white"
@@ -380,9 +380,9 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
           )}
 
           {inventoryItems.length === 0 ? (
-            <p className="text-center text-gray-500 p-4 px-4">No hay elementos en el inventario de este congelador.</p> {/* Added px-4 here */}
+            <p className="text-center text-gray-500 p-4 px-4">No hay elementos en el inventario de este congelador.</p>
           ) : (
-            <div className="overflow-x-auto"> {/* No px-4 here */}
+            <div className="overflow-x-auto">
               <Table className="min-w-full">
                 <TableHeader className="bg-card z-10">
                   <TableRow>
@@ -397,9 +397,7 @@ const InventoryPage: React.FC<InventoryPageProps> = ({ hideHeader = false, initi
                         <TableHead className="w-[150px]">Fecha Creación</TableHead>
                       </>
                     )}
-                    {canEditItem && (
-                      <TableHead className="w-[80px] text-center">Acciones</TableHead>
-                    )}
+                    {canEditItem && <TableHead className="w-[80px] text-center">Acciones</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
